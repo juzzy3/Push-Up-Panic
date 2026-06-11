@@ -34,7 +34,7 @@ Weapons fire automatically — your job is to move, dodge, and choose upgrades.
 
 ### Play in the browser (easiest)
 
-If this repo is deployed (e.g. on Vercel or GitHub Pages), just open the link and click **BASH!** — nothing to install.
+**▶️ [Play Cube Basher now](https://mreflow.github.io/cube-basher/)** — nothing to install, just click **BASH!**
 
 ### Run it locally
 
