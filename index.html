@@ -216,24 +216,34 @@ const Sfx = (() => {
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + dur + 0.02);
   }
+  // rate gate: at level 8 a single hammer swing can hit 80+ enemies in one frame —
+  // without this, that's 80+ oscillator nodes per swing, which is a real frame killer
+  const lastT = {};
+  const gate = (key, gap) => {
+    const n = performance.now();
+    if (n - (lastT[key] || 0) < gap) return false;
+    lastT[key] = n;
+    return true;
+  };
   return {
     ensure,
     getCtx(){ ensure(); return ctx; },
     toggleMute(){ muted = !muted; return muted; },
-    hit(){ beep(160 + Math.random()*60, 0.07, 'square', 0.05, -60); },
-    crit(){ beep(320, 0.12, 'square', 0.07, -180); },
-    gem(){ beep(880 + Math.random()*200, 0.07, 'sine', 0.06, 300); },
-    gold(){ beep(1180, 0.09, 'triangle', 0.07, 200); },
+    hit(){ if (gate('hit', 45)) beep(160 + Math.random()*60, 0.07, 'square', 0.05, -60); },
+    crit(){ if (gate('crit', 70)) beep(320, 0.12, 'square', 0.07, -180); },
+    gem(){ if (gate('gem', 40)) beep(880 + Math.random()*200, 0.07, 'sine', 0.06, 300); },
+    gold(){ if (gate('gold', 70)) beep(1180, 0.09, 'triangle', 0.07, 200); },
     hurt(){ beep(110, 0.22, 'sawtooth', 0.1, -50); },
     levelup(){ beep(523,0.1,'square',0.07); setTimeout(()=>beep(659,0.1,'square',0.07),90); setTimeout(()=>beep(784,0.16,'square',0.08),180); },
     pick(){ beep(660, 0.08, 'triangle', 0.07, 120); },
-    boom(){ beep(70, 0.3, 'sawtooth', 0.12, -30); },
-    zap(){ beep(1400, 0.08, 'sawtooth', 0.05, -900); },
+    boom(){ if (gate('boom', 70)) beep(70, 0.3, 'sawtooth', 0.12, -30); },
+    zap(){ if (gate('zap', 70)) beep(1400, 0.08, 'sawtooth', 0.05, -900); },
+    block(){ if (gate('block', 55)) beep(620, 0.06, 'triangle', 0.07, -250); },
     bossroar(){ beep(60, 0.5, 'sawtooth', 0.14, 25); setTimeout(()=>beep(50,0.5,'sawtooth',0.14,20),180); },
     die(){ beep(220,0.25,'sawtooth',0.1,-150); setTimeout(()=>beep(140,0.4,'sawtooth',0.1,-100),200); },
     win(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.22,'square',0.08),i*140)); },
     jump(){ beep(300, 0.12, 'sine', 0.05, 220); },
-    pot(){ beep(230, 0.07, 'square', 0.09, -130); setTimeout(()=>beep(140, 0.12, 'square', 0.07, -70), 45); },
+    pot(){ if (gate('pot', 60)) { beep(230, 0.07, 'square', 0.09, -130); setTimeout(()=>beep(140, 0.12, 'square', 0.07, -70), 45); } },
     food(){ beep(520, 0.08, 'sine', 0.08, 140); setTimeout(()=>beep(720, 0.11, 'sine', 0.07, 130), 75); },
   };
 })();
@@ -353,7 +363,8 @@ const goldMult = () => 1 + save.upgrades.gold * 0.10;
    RENDERER / SCENE / POST
 ============================================================ */
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+let pxRatio = Math.min(devicePixelRatio, 1.5);
+renderer.setPixelRatio(pxRatio);
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
@@ -918,39 +929,54 @@ function updateDamageNumbers(dt) {
 /* ============================================================
    PARTICLES (pooled meshes)
 ============================================================ */
+// all particles share ONE InstancedMesh — one draw call instead of one per particle.
+// fade is scale-based (instances can't have per-instance opacity without custom shaders)
+const PART_MAX = 150;
 const partGeo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
+const partMesh = new THREE.InstancedMesh(partGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }), PART_MAX);
+partMesh.frustumCulled = false;
+scene.add(partMesh);
 const particles = [];
-for (let i = 0; i < 90; i++) {
-  const m = new THREE.Mesh(partGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true }));
-  m.visible = false; scene.add(m);
-  particles.push({ m, life: 0, vel: new THREE.Vector3() });
+for (let i = 0; i < PART_MAX; i++) {
+  particles.push({ idx: i, m: new THREE.Object3D(), life: 0, s0: 1, vel: new THREE.Vector3() });
+  partMesh.setColorAt(i, new THREE.Color(0xffffff));
 }
 function burst(pos, color, n = 8, speed = 5, up = 4) {
   for (let i = 0; i < n; i++) {
     const p = particles.find(p => p.life <= 0);
     if (!p) return;
     p.life = 0.45 + Math.random()*0.25;
-    p.m.visible = true;
-    p.m.material.color.set(color);
-    p.m.material.opacity = 1;
     p.m.position.copy(pos); p.m.position.y += 0.8;
     p.vel.set((Math.random()-0.5)*speed, Math.random()*up, (Math.random()-0.5)*speed);
-    p.m.scale.setScalar(0.7 + Math.random()*0.9);
+    p.s0 = 0.7 + Math.random()*0.9;
+    p.m.scale.setScalar(p.s0);
+    partMesh.setColorAt(p.idx, _pc.set(color));
+    partMesh.instanceColor.needsUpdate = true;
   }
 }
+const _pc = new THREE.Color();
 function updateParticles(dt) {
   for (const p of particles) {
     if (p.life <= 0) continue;
     p.life -= dt;
-    if (p.life <= 0) { p.m.visible = false; continue; }
-    p.vel.y -= 14 * dt;
-    p.m.position.addScaledVector(p.vel, dt);
-    const pg = terrainH(p.m.position.x, p.m.position.z) + 0.1;
-    if (p.m.position.y < pg) { p.m.position.y = pg; p.vel.y *= -0.4; p.vel.x *= 0.8; p.vel.z *= 0.8; }
-    p.m.material.opacity = Math.min(1, p.life / 0.25);
-    p.m.rotation.x += dt*6; p.m.rotation.y += dt*5;
+    if (p.life > 0) {
+      p.vel.y -= 14 * dt;
+      p.m.position.addScaledVector(p.vel, dt);
+      const pg = terrainH(p.m.position.x, p.m.position.z) + 0.1;
+      if (p.m.position.y < pg) { p.m.position.y = pg; p.vel.y *= -0.4; p.vel.x *= 0.8; p.vel.z *= 0.8; }
+      p.m.scale.setScalar(p.s0 * Math.min(1, p.life / 0.25));
+      p.m.rotation.x += dt*6; p.m.rotation.y += dt*5;
+    }
   }
 }
+function syncParticleInstances() {
+  for (const p of particles) {
+    if (p.life > 0) { p.m.updateMatrix(); partMesh.setMatrixAt(p.idx, p.m.matrix); }
+    else { partMesh.setMatrixAt(p.idx, _zeroM4); }
+  }
+  partMesh.instanceMatrix.needsUpdate = true;
+}
+const _zeroM4 = new THREE.Matrix4().makeScale(0, 0, 0);
 
 /* ============================================================
    ENEMIES — merged single-mesh bodies (1 draw call each)
@@ -1091,16 +1117,44 @@ const enemyTemplates = {};
 for (const t in ENEMY_TYPES) enemyTemplates[t] = buildEnemyTemplate(t);
 const enemyBaseMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.85 });
 
-function makeEnemyMesh(t) {
-  const def = ENEMY_TYPES[t];
-  const mat = enemyBaseMat.clone();
-  const tint = 0.9 + Math.random()*0.2;
-  mat.color.setScalar(tint); // subtle per-enemy variation
-  const mesh = new THREE.Mesh(enemyTemplates[t], mat);
-  mesh.scale.setScalar(def.scale);
+// one InstancedMesh per enemy TYPE: the whole horde renders in 6 draw calls
+// (it used to be one mesh + one cloned material per enemy — ~700 draws late game).
+// each enemy keeps a lightweight Object3D (never added to the scene) as its transform,
+// so all gameplay code can keep using e.mesh.position/rotation/scale unchanged.
+const ENEMY_POOL_MAX = { grunt: 420, runner: 260, brute: 190, spitter: 150, elite: 40, boss: 8 };
+const enemyPools = {};
+const _ec = new THREE.Color();
+for (const t in ENEMY_TYPES) {
+  const mesh = new THREE.InstancedMesh(enemyTemplates[t], enemyBaseMat, ENEMY_POOL_MAX[t]);
+  mesh.count = 0;
+  mesh.frustumCulled = false; // the horde surrounds the player; culling per-type is pointless
   mesh.castShadow = true;
-  mesh.userData = { mat, tint };
-  return mesh;
+  mesh.setColorAt(0, _ec.setRGB(1, 1, 1)); // allocate the instanceColor buffer
+  scene.add(mesh);
+  enemyPools[t] = { mesh, list: [] };
+}
+function freeEnemy(e) {
+  const pool = enemyPools[e.type];
+  const last = pool.list.pop();
+  if (last !== e) { pool.list[e.poolIdx] = last; last.poolIdx = e.poolIdx; }
+}
+function syncEnemyInstances() {
+  for (const t in enemyPools) {
+    const pool = enemyPools[t], mesh = pool.mesh, n = pool.list.length;
+    for (let i = 0; i < n; i++) {
+      const e = pool.list[i], o = e.mesh;
+      o.updateMatrix();
+      mesh.setMatrixAt(i, o.matrix);
+      const k = e.tint;
+      if (e.flash > 0) _ec.setRGB(2.6, 2.6, 2.6);                       // hit flash (brightens, blooms)
+      else if (e.slowT > 0) _ec.setRGB(k*0.6, k*0.85, k*1.35);          // frost tint
+      else _ec.setRGB(k, k, k);
+      mesh.setColorAt(i, _ec);
+    }
+    mesh.count = n;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }
 }
 
 function hpScale(){ return 1 + G.t/60 * 0.42; }
@@ -1114,7 +1168,10 @@ function spawnEnemy(type, posOverride) {
   const cap = 260 + Math.min(120, Math.floor(G.t / 12));
   if (enemies.length > cap && !ENEMY_TYPES[type].boss && !ENEMY_TYPES[type].elite) return;
   const def = ENEMY_TYPES[type];
-  const mesh = makeEnemyMesh(type);
+  const pool = enemyPools[type];
+  if (pool.list.length >= ENEMY_POOL_MAX[type]) return;
+  const mesh = new THREE.Object3D(); // pooled instance transform — not a scene object
+  mesh.scale.setScalar(def.scale);
   let x, z;
   if (posOverride) { x = posOverride.x; z = posOverride.z; }
   else {
@@ -1125,9 +1182,9 @@ function spawnEnemy(type, posOverride) {
   }
   const gy = terrainH(x, z);
   mesh.position.set(x, gy, z);
-  scene.add(mesh);
   const e = {
     type, def, mesh, gy,
+    tint: 0.9 + Math.random()*0.2,
     hp: def.elite ? eliteHpAt(G.t) : def.boss ? bossHpAt(G.t) : def.hp * hpScale(),
     maxhp: 0,
     kb: new THREE.Vector3(),
@@ -1135,14 +1192,15 @@ function spawnEnemy(type, posOverride) {
     bob: Math.random()*Math.PI*2,
   };
   e.maxhp = e.hp;
+  e.poolIdx = pool.list.length;
+  pool.list.push(e);
   enemies.push(e);
   if (def.boss) { G.boss = e; Sfx.bossroar(); document.getElementById('bossWrap').style.display='block'; }
   return e;
 }
 
 function killEnemy(e, idx) {
-  scene.remove(e.mesh);
-  e.mesh.userData.mat.dispose();
+  freeEnemy(e);
   enemies.splice(idx, 1);
   G.kills++;
   // combo: chained kills build a counter; every 50 pays out bonus gold
@@ -1211,32 +1269,61 @@ function hurtPlayer(raw) {
    PICKUPS — gems, gold, hearts (emissive, bloom-lit)
 ============================================================ */
 const gemGeo = new THREE.OctahedronGeometry(0.32, 0);
-const gemMats = {
-  1: new THREE.MeshBasicMaterial({ color: 0x6dffac }),
-  3: new THREE.MeshBasicMaterial({ color: 0x6dc4ff }),
-  5: new THREE.MeshBasicMaterial({ color: 0xff7aee }),
-  10: new THREE.MeshBasicMaterial({ color: 0xffdf66 }),
+const gemTierColor = { 1: 0x6dffac, 3: 0x6dc4ff, 5: 0xff7aee, 10: 0xffdf66 };
+// XP gems (the numerous pickup) share one InstancedMesh — tier color per instance
+const XP_MAX = 260;
+const xpPool = {
+  mesh: new THREE.InstancedMesh(gemGeo, new THREE.MeshBasicMaterial({ color: 0xffffff }), XP_MAX),
+  list: [],
 };
+xpPool.mesh.count = 0;
+xpPool.mesh.frustumCulled = false;
+xpPool.mesh.setColorAt(0, new THREE.Color(0xffffff));
+scene.add(xpPool.mesh);
+const _gc2 = new THREE.Color();
+function syncGemInstances() {
+  const mesh = xpPool.mesh, n = xpPool.list.length;
+  for (let i = 0; i < n; i++) {
+    const g = xpPool.list[i];
+    g.m.updateMatrix();
+    mesh.setMatrixAt(i, g.m.matrix);
+    mesh.setColorAt(i, _gc2.set(gemTierColor[g.tier]));
+  }
+  mesh.count = n;
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+}
 const goldGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 10);
 const goldMat = new THREE.MeshBasicMaterial({ color: 0xffd23e });
 const heartGeo = new THREE.SphereGeometry(0.34, 8, 8);
 const heartMat = new THREE.MeshBasicMaterial({ color: 0xff6688 });
 
 function pushPickup(kind, value, m, x, z) {
-  // perf guard: when the gem field gets huge, fold new XP into an existing gem
-  if (kind === 'xp' && gems.length > 240) {
-    const ex = gems.find(g => g.kind === 'xp' && !g.fly);
-    if (ex) { ex.value += value; return; }
-  }
   const gy = terrainH(x, z);
   m.position.set(x, gy + 0.5, z);
-  scene.add(m);
+  if (kind !== 'xp') scene.add(m); // xp gems render through the instanced pool
   gems.push({ kind, value, m, fly: false, baseY: gy + 0.5 });
+  return gems[gems.length - 1];
+}
+function removePickup(g, i) {
+  if (g.kind === 'xp') {
+    const last = xpPool.list.pop();
+    if (last !== g) { xpPool.list[g.poolIdx] = last; last.poolIdx = g.poolIdx; }
+  } else scene.remove(g.m);
+  gems.splice(i, 1);
 }
 function dropGem(pos, value, scatter = false) {
+  // perf guard: when the gem field is huge, fold new XP into an existing gem
+  if (xpPool.list.length >= XP_MAX - 5) {
+    const ex = xpPool.list.find(g => !g.fly);
+    if (ex) { ex.value += value; return; }
+  }
   const tier = value >= 10 ? 10 : value >= 5 ? 5 : value >= 3 ? 3 : 1;
-  pushPickup('xp', value, new THREE.Mesh(gemGeo, gemMats[tier]),
+  const g = pushPickup('xp', value, new THREE.Object3D(),
     pos.x + (scatter ? (Math.random()-0.5)*3 : 0), pos.z + (scatter ? (Math.random()-0.5)*3 : 0));
+  g.tier = tier;
+  g.poolIdx = xpPool.list.length;
+  xpPool.list.push(g);
 }
 function dropGold(pos) {
   const m = new THREE.Mesh(goldGeo, goldMat);
@@ -1283,7 +1370,7 @@ function updateGems(dt) {
           showDamage(P.pos, '+' + heal + ' HP', '#7dff6a', 20);
         }
         else { P.hp = Math.min(P.maxhp, P.hp + g.value); Sfx.gold(); showDamage(P.pos, '+'+g.value+' HP', '#ff5577', 16); }
-        scene.remove(g.m); gems.splice(i, 1);
+        removePickup(g, i);
         continue;
       }
       g.m.position.addScaledVector(_v.normalize(), Math.max(14, dist*6) * dt);
@@ -1912,8 +1999,6 @@ function updateEnemies(dt) {
     m.position.x += _v.x * spd * dt;
     m.position.z += _v.z * spd * dt;
     m.rotation.y = Math.atan2(_v.x, _v.z);
-    // only enemies near the player can be inside the shadow frustum anyway
-    m.castShadow = e.def.boss || e.def.elite || distToP < 50;
 
     const k = gridKey(m.position.x/2, m.position.z/2);
     const cell = grid.get(k);
@@ -1945,17 +2030,7 @@ function updateEnemies(dt) {
     const sq = e.flash > 0 ? 1 : 0;
     m.scale.set(e.def.scale * (1 + sq*0.12), e.def.scale * (1 - sq*0.14), e.def.scale * (1 + sq*0.12));
 
-    if (e.flash > 0) {
-      e.flash -= dt;
-      e.mesh.userData.mat.emissive.setHex(0xffffff);
-      e.mesh.userData.mat.emissiveIntensity = 0.65;
-    } else if (e.mesh.userData.mat.emissiveIntensity) {
-      e.mesh.userData.mat.emissiveIntensity = 0;
-      e.mesh.userData.mat.emissive.setHex(0x000000);
-    }
-    // frost tint while slowed
-    if (e.slowT > 0) e.mesh.userData.mat.color.setRGB(e.mesh.userData.tint*0.6, e.mesh.userData.tint*0.85, e.mesh.userData.tint*1.35);
-    else e.mesh.userData.mat.color.setScalar(e.mesh.userData.tint);
+    if (e.flash > 0) e.flash -= dt; // flash & frost tints render via per-instance colors in syncEnemyInstances
 
     // contact damage — jumping (or standing on a ledge above) clears it
     e.contactCd -= dt;
@@ -1993,6 +2068,23 @@ function updateEShots(dt) {
     s.m.position.y += (ty - s.m.position.y) * Math.min(1, dt * 6);
     s.m.rotation.x += dt * 9;
     let dead = s.life <= 0;
+    // Bash Orbs swat incoming shots out of the air — orbiting defense!
+    if (!dead) {
+      for (let k = 0; k < orbMeshes.length; k++) {
+        const op = orbMeshes[k].position;
+        const dx = op.x - s.m.position.x, dz = op.z - s.m.position.z;
+        if (dx*dx + dz*dz < 1.1 && Math.abs(op.y - s.m.position.y) < 1.4) {
+          burst(s.m.position, 0xc9a0ff, 5, 4, 2);
+          showDamage(s.m.position, 'BLOCKED', '#c9a0ff', 13);
+          Sfx.block();
+          dead = true;
+          scene.remove(s.m);
+          eShots.splice(i, 1);
+          break;
+        }
+      }
+      if (dead) continue;
+    }
     if (!dead && P.invuln <= 0 &&
         Math.hypot(s.m.position.x - P.pos.x, s.m.position.z - P.pos.z) < 0.9 &&
         Math.abs(s.m.position.y - (P.pos.y + 1)) < 1.3) {  // jump over it!
@@ -2012,16 +2104,16 @@ function updateEShots(dt) {
    GAME FLOW
 ============================================================ */
 function resetGame() {
-  for (const e of enemies) { scene.remove(e.mesh); e.mesh.userData.mat.dispose(); }
   enemies.length = 0;
-  for (const g of gems) scene.remove(g.m);
-  gems.length = 0;
+  for (const t in enemyPools) enemyPools[t].list.length = 0;
+  for (const g of gems) { if (g.kind !== 'xp') scene.remove(g.m); }
+  gems.length = 0; xpPool.list.length = 0;
   for (const p of projectiles) scene.remove(p.m);
   projectiles.length = 0;
   for (const b of beams) scene.remove(b.m); beams.length = 0;
   for (const r of rings) scene.remove(r.m); rings.length = 0;
   for (const s of eShots) scene.remove(s.m); eShots.length = 0;
-  for (const p of particles) { p.life = 0; p.m.visible = false; }
+  for (const p of particles) p.life = 0;
   for (const s of dmgPool) { s.life = 0; s.el.style.display = 'none'; }
   orbMeshes.forEach(m => orbGroup.remove(m)); orbMeshes = [];
   if (P.mesh) scene.remove(P.mesh);
@@ -2185,7 +2277,7 @@ document.getElementById('resetSave').onclick = () => {
 refreshMenuCoins();
 
 // console handle for tinkering: BB.gainXP(50), BB.spawnEnemy('boss'), ...
-window.BB = { G, P, save, META, gainXP, spawnEnemy, composer, renderer, terrainH, pots, breakPotsNear, spawnPot, persistSave, Music, tick: (now) => tick(now) };
+window.BB = { G, P, save, META, gainXP, spawnEnemy, composer, renderer, terrainH, pots, breakPotsNear, spawnPot, persistSave, Music, syncOrbs, tick: (now) => tick(now) };
 
 /* ============================================================
    MAIN LOOP
@@ -2204,8 +2296,26 @@ const camTargetV = new THREE.Vector3(0, 0, 0);
 let fovCur = 55;
 
 let last = performance.now();
+
+// adaptive resolution: if real frame times climb (weak GPU + heavy horde),
+// step the render resolution down a notch; recover when things calm down
+let realLast = performance.now(), ftAvg = 16, qualCooldown = 300;
+function setQuality(r) {
+  pxRatio = Math.max(1.0, Math.min(Math.min(devicePixelRatio, 1.5), r));
+  renderer.setPixelRatio(pxRatio);
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setPixelRatio(pxRatio);
+  composer.setSize(innerWidth, innerHeight);
+}
 function loop(now) {
   requestAnimationFrame(loop);
+  const rd = now - realLast; realLast = now;
+  if (rd < 250) ftAvg = ftAvg * 0.96 + rd * 0.04; // ignore tab-switch gaps
+  if (--qualCooldown <= 0) {
+    if (ftAvg > 24 && pxRatio > 1.01) { setQuality(pxRatio - 0.25); qualCooldown = 240; }
+    else if (ftAvg < 12.5 && pxRatio < Math.min(devicePixelRatio, 1.5) - 0.01) { setQuality(pxRatio + 0.25); qualCooldown = 600; }
+    else qualCooldown = 60;
+  }
   tick(now);
 }
 // the whole simulation step — also exposed as BB.tick for scripted testing
@@ -2361,6 +2471,11 @@ function tick(now) {
     }
     pos.needsUpdate = true;
   }
+
+  // push instanced pools (enemies, particles, xp gems) to the GPU
+  syncEnemyInstances();
+  syncParticleInstances();
+  syncGemInstances();
 
   // orbit camera (drag to rotate, scroll to zoom): damped follow + sprint FOV kick
   if (P.mesh) {
