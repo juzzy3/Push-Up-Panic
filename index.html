@@ -253,7 +253,7 @@ const Sfx = (() => {
 ============================================================ */
 const Music = (() => {
   let gain = null, playing = false, timer = null, step = 0, nextT = 0, noiseBuf = null, muted = false;
-  let currentTrack = 'game'; // active track id
+  let currentTrack = 'game_pushy'; // active track id
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 
   /* ---- TRACK DEFINITIONS ---- */
@@ -716,7 +716,7 @@ const Music = (() => {
   function schedule() {
     if (!playing) return;
     const ctx = ensure();
-    const T = TRACKS[currentTrack];
+    const T = TRACKS[currentTrack] || TRACKS['game_pushy'];
     const SPB = 60 / T.bpm / 2;
     const render = RENDERERS[currentTrack] || stepGame;
     while (nextT < ctx.currentTime + 0.25) {
