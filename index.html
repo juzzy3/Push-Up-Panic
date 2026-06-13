@@ -772,11 +772,12 @@ function makePlayerMesh(ch) {
   hips.add(belt);
 
   // head
-  const head = rig.head = new THREE.Group();
-  head.position.y = 0.98;
+    const head = rig.head = new THREE.Group();
+  head.position.y = 1.03;
+  head.scale.set(1.45, 1.45, 1.45);
   hips.add(head);
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 11), mat(skin));
-  skull.scale.set(0.86, 1.12, 0.9);
+     const skull = new THREE.Mesh(new THREE.SphereGeometry(0.36, 14, 11), mat(skin));
+  skull.scale.set(0.82, 1.2, 0.9);
   head.add(skull);
   const hairM = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8, 0, Math.PI*2, 0, Math.PI*0.55), mat(ch.hair));
   hairM.position.y = 0.035;
@@ -790,39 +791,42 @@ function makePlayerMesh(ch) {
     const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), eyeMat); e1.position.set(sx, 0.02, 0.275); head.add(e1);
     const p1 = new THREE.Mesh(new THREE.SphereGeometry(0.042, 6, 6), pupMat); p1.position.set(sx, 0.02, 0.345); head.add(p1);
   }
-        // low-poly 3D Justin likeness, normal skin
+          // low-poly 3D Justin likeness, larger bobble-head version
   const justinHair = 0x4a2414;
-  const justinHairDark = 0x2b140b;
-  const justinBeard = 0x5a321f;
-  const justinBeardLight = 0x7a4a31;
-  const justinBrow = 0x3a2112;
-  const justinEye = 0x6b3f1d;
+  const justinHairDark = 0x261107;
+  const justinBeard = 0x6a3f28;
+  const justinBeardSoft = 0x8a5a3d;
+  const justinBrow = 0x4a2a17;
+  const justinEye = 0x7a4a22;
   const justinMouth = 0x7a2c25;
 
   const hairMat = new THREE.MeshStandardMaterial({ color: justinHair, roughness: 0.85, flatShading: true });
   const hairDarkMat = new THREE.MeshStandardMaterial({ color: justinHairDark, roughness: 0.9, flatShading: true });
   const beardMat = new THREE.MeshStandardMaterial({ color: justinBeard, roughness: 1.0, flatShading: true });
-  const beardLightMat = new THREE.MeshStandardMaterial({ color: justinBeardLight, roughness: 1.0, flatShading: true });
+  const beardSoftMat = new THREE.MeshStandardMaterial({ color: justinBeardSoft, roughness: 1.0, flatShading: true });
   const browMat = new THREE.MeshStandardMaterial({ color: justinBrow, roughness: 0.85, flatShading: true });
   const eyeBrownMat = new THREE.MeshStandardMaterial({ color: justinEye, roughness: 0.55, flatShading: true });
   const mouthMat = new THREE.MeshStandardMaterial({ color: justinMouth, roughness: 0.8, flatShading: true });
 
-  // make the skull feel a little less spherical
-  skull.scale.set(0.9, 1.08, 0.92);
-
-  // hide the old simple hair cap and headband for this normal likeness
+  // hide the old simple hair cap and headband for normal Justin
   hairM.visible = false;
   band.visible = false;
 
-  // stronger swept-up low-poly hair silhouette
+  // full hair mass, bigger than the skull so it changes the silhouette
+  const hairShell = new THREE.Mesh(new THREE.SphereGeometry(0.39, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.68), hairDarkMat);
+  hairShell.position.set(0, 0.1, -0.04);
+  hairShell.scale.set(1.03, 0.98, 1.08);
+  head.add(hairShell);
+
+  // swept-up chunky hair pieces based on the portrait
   const hairPieces = [
-    [-0.24, 0.34, 0.08, 0.16, 0.2, 0.18, -0.55, -0.15],
-    [-0.12, 0.41, 0.12, 0.18, 0.28, 0.2, -0.25, -0.08],
-    [0.02, 0.43, 0.13, 0.2, 0.31, 0.22, 0.04, 0.02],
-    [0.17, 0.39, 0.1, 0.18, 0.25, 0.2, 0.32, 0.08],
-    [0.29, 0.31, 0.02, 0.16, 0.19, 0.17, 0.62, 0.12],
-    [-0.29, 0.22, 0.06, 0.12, 0.18, 0.14, -0.85, -0.2],
-    [0.31, 0.18, 0.04, 0.12, 0.18, 0.14, 0.82, 0.2]
+    [-0.25, 0.33, 0.13, 0.14, 0.24, 0.17, -0.7, -0.22],
+    [-0.13, 0.42, 0.15, 0.16, 0.31, 0.18, -0.38, -0.15],
+    [0.02, 0.45, 0.16, 0.18, 0.34, 0.2, -0.05, -0.08],
+    [0.17, 0.41, 0.14, 0.16, 0.29, 0.18, 0.33, 0.04],
+    [0.3, 0.31, 0.08, 0.14, 0.23, 0.16, 0.7, 0.13],
+    [-0.33, 0.18, 0.05, 0.1, 0.22, 0.14, -0.9, -0.08],
+    [0.34, 0.16, 0.04, 0.1, 0.2, 0.14, 0.85, 0.08]
   ];
 
   for (const [x, y, z, w, h, d, rz, rx] of hairPieces) {
@@ -833,130 +837,81 @@ function makePlayerMesh(ch) {
     head.add(spike);
   }
 
-      // full back hair volume, larger than skull so it changes the silhouette
-  const backHair = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.72), hairDarkMat);
-  backHair.position.set(0, 0.095, -0.055);
-  backHair.scale.set(0.98, 1.02, 1.05);
-  head.add(backHair);
-
-  // rear hair bulk, makes the back look like hair mass, not painted skull
-  const rearHairBulk = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.36, 0.26), hairDarkMat);
-  rearHairBulk.position.set(0, 0.03, -0.245);
-  rearHairBulk.rotation.x = 0.05;
+  // back and side hair volume, not just painted skull
+  const rearHairBulk = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.34, 0.28), hairDarkMat);
+  rearHairBulk.position.set(0, 0.03, -0.28);
+  rearHairBulk.rotation.x = 0.08;
   head.add(rearHairBulk);
 
-  // lower rear hair, closes the gap at the nape
-  const napeHair = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.18), hairDarkMat);
-  napeHair.position.set(0, -0.16, -0.255);
-  napeHair.rotation.x = 0.12;
-  head.add(napeHair);
-
-  // thick side hair volumes, visible from profile
-  for (const sx of [-0.36, 0.36]) {
-    const sideMass = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.36, 0.23), hairDarkMat);
-    sideMass.position.set(sx, 0.04, -0.06);
+  for (const sx of [-0.33, 0.33]) {
+    const sideMass = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.34, 0.2), hairDarkMat);
+    sideMass.position.set(sx, 0.035, -0.045);
     sideMass.rotation.z = sx < 0 ? -0.12 : 0.12;
     sideMass.rotation.y = sx < 0 ? 0.18 : -0.18;
     head.add(sideMass);
   }
 
-  // rear spikes, so the back reads as messy hair, not a helmet
-  const rearSpikes = [
-    [-0.22, 0.23, -0.33, 0.16, 0.18, 0.18, -0.45],
-    [0.00, 0.28, -0.35, 0.18, 0.2, 0.18, 0.05],
-    [0.22, 0.22, -0.33, 0.16, 0.18, 0.18, 0.45],
-    [-0.14, 0.02, -0.38, 0.13, 0.16, 0.15, -0.2],
-    [0.14, 0.02, -0.38, 0.13, 0.16, 0.15, 0.2]
-  ];
-
-  for (const [x, y, z, w, h, d, rz] of rearSpikes) {
-    const rearSpike = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hairMat);
-    rearSpike.position.set(x, y, z);
-    rearSpike.rotation.z = rz;
-    rearSpike.rotation.x = 0.18;
-    head.add(rearSpike);
-  }
-
-  // rear lower hair mass
-  const lowerBackHair = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.22, 0.16), hairDarkMat);
-  lowerBackHair.position.set(0, -0.02, -0.19);
-  lowerBackHair.rotation.x = 0.12;
-  head.add(lowerBackHair);
-
-  // side hair panels, left and right
-  for (const sx of [-0.34, 0.34]) {
-    const sidePanel = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.18), hairDarkMat);
-    sidePanel.position.set(sx, 0.07, -0.045);
-    sidePanel.rotation.z = sx < 0 ? -0.12 : 0.12;
-    sidePanel.rotation.y = sx < 0 ? 0.2 : -0.2;
-    head.add(sidePanel);
-  }
-
-  // side hair and sideburns
-  for (const sx of [-0.3, 0.3]) {
-    const sideHair = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.28, 0.12), hairDarkMat);
-    sideHair.position.set(sx, 0.04, 0.04);
-    sideHair.rotation.z = sx < 0 ? -0.12 : 0.12;
-    head.add(sideHair);
-
-    const sideburn = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.18, 0.055), beardMat);
-    sideburn.position.set(sx * 0.92, -0.095, 0.19);
-    sideburn.rotation.z = sx < 0 ? -0.08 : 0.08;
-    head.add(sideburn);
-  }
-
-  // replace pupil colour with brown by adding small brown discs in front
+  // brown irises placed in front of the original pupils
   for (const sx of [-0.13, 0.13]) {
-    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.032, 7, 7), eyeBrownMat);
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.035, 7, 7), eyeBrownMat);
     iris.position.set(sx, 0.02, 0.372);
     head.add(iris);
   }
 
-  // brows, strong but not mask-like
-  for (const [sx, rz] of [[-0.13, 0.16], [0.13, -0.16]]) {
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.028, 0.018), browMat);
-    brow.position.set(sx, 0.14, 0.375);
+  // brows, lifted higher so they do not read as glasses
+  for (const [sx, rz] of [[-0.13, 0.12], [0.13, -0.12]]) {
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.024, 0.016), browMat);
+    brow.position.set(sx, 0.17, 0.38);
     brow.rotation.z = rz;
     head.add(brow);
   }
 
-  // nose bridge and tip
-  const noseBridge = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.12, 0.035), mat(skin));
-  noseBridge.position.set(0, 0.015, 0.38);
+  // stronger nose bridge and tip
+  const noseBridge = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.13, 0.035), mat(skin));
+  noseBridge.position.set(0, 0.02, 0.385);
   noseBridge.rotation.x = -0.12;
   head.add(noseBridge);
 
-  const noseTip = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.06, 0.065), mat(skin));
-  noseTip.position.set(0, -0.06, 0.405);
+  const noseTip = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.055, 0.06), mat(skin));
+  noseTip.position.set(0, -0.065, 0.413);
   head.add(noseTip);
 
-  // moustache, split pieces so it reads as facial hair, not a mask
-  for (const [sx, rz] of [[-0.055, -0.18], [0.055, 0.18]]) {
-    const moustache = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.032, 0.022), beardMat);
-    moustache.position.set(sx, -0.125, 0.392);
+  // narrower moustache, split and softened
+  for (const [sx, rz] of [[-0.043, -0.12], [0.043, 0.12]]) {
+    const moustache = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.025, 0.018), beardMat);
+    moustache.position.set(sx, -0.135, 0.402);
     moustache.rotation.z = rz;
     head.add(moustache);
   }
 
-  // small confident smirk under the moustache
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.018, 0.018), mouthMat);
-  mouth.position.set(0.018, -0.17, 0.402);
-  mouth.rotation.z = -0.07;
+  // small confident mouth below the moustache
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.016, 0.016), mouthMat);
+  mouth.position.set(0.015, -0.178, 0.408);
+  mouth.rotation.z = -0.06;
   head.add(mouth);
 
-  // beard made from smaller warm pieces, not one dark burglar mask
+  // beard, lower and softer so it reads as beard, not a mask
   const beardPieces = [
-    [-0.11, -0.205, 0.36, 0.1, 0.05],
-    [0, -0.225, 0.37, 0.13, 0.055],
-    [0.11, -0.205, 0.36, 0.1, 0.05],
-    [-0.055, -0.265, 0.335, 0.09, 0.045],
-    [0.055, -0.265, 0.335, 0.09, 0.045]
+    [-0.12, -0.205, 0.365, 0.08, 0.042, beardSoftMat],
+    [0, -0.225, 0.375, 0.11, 0.045, beardSoftMat],
+    [0.12, -0.205, 0.365, 0.08, 0.042, beardSoftMat],
+    [-0.065, -0.27, 0.345, 0.075, 0.04, beardMat],
+    [0.065, -0.27, 0.345, 0.075, 0.04, beardMat],
+    [0, -0.3, 0.33, 0.095, 0.038, beardMat]
   ];
 
-  for (const [x, y, z, w, h] of beardPieces) {
-    const beard = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.026), beardLightMat);
+  for (const [x, y, z, w, h, material] of beardPieces) {
+    const beard = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.022), material);
     beard.position.set(x, y, z);
     head.add(beard);
+  }
+
+  // sideburns, linking hair to beard
+  for (const sx of [-0.28, 0.28]) {
+    const sideburn = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.16, 0.045), beardMat);
+    sideburn.position.set(sx, -0.1, 0.18);
+    sideburn.rotation.z = sx < 0 ? -0.08 : 0.08;
+    head.add(sideburn);
   }
   
   // arms — pivot at shoulder
