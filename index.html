@@ -745,9 +745,9 @@ scene.add(motes);
 const CHARACTERS = [
   { id:'bonky', emoji:'💪', name:'PUSHY',       desc:'The classic. Balanced stats.<br>Starts with Single Push Up.', hp:100, speed:8.0, weapon:'hammer',
     shirt:0xb84040, pants:0x1a1a1a, hair:0x5a3413, band:0x5a3413, build:1.0 },
-  { id:'zippy', emoji:'🤸‍♂️', name:'DOUBLE PUSH', desc:'+25% move speed, fragile.<br>Double Push Ups — strikes twice per attack.', hp:75,  speed:10.0, weapon:'boomerang',
+  { id:'zippy', emoji:'🤸', name:'DOUBLE PUSH', desc:'+25% move speed, fragile.<br>Double Push Ups — strikes twice per attack.', hp:75,  speed:10.0, weapon:'boomerang',
     shirt:0xf0f0f0, pants:0x2c3e66, hair:0x5a3413, band:0x5a3413, build:0.9 },
-  { id:'chonk', emoji:'🏋️‍♂️', name:'PUSH BALLS',  desc:'+60 max HP, a bit slow.<br>Starts with Push Balls.',         hp:160, speed:7.0, weapon:'orbs',
+  { id:'chonk', emoji:'🤹', name:'PUSH BALLS',  desc:'+60 max HP, a bit slow.<br>Starts with Push Balls.',         hp:160, speed:7.0, weapon:'orbs',
     shirt:0x8a93a8, pants:0x3a3f52, hair:0x2a2a33, band:0x7dff6a, build:1.18 },
 ];
 let chosenChar = 0;
@@ -778,10 +778,10 @@ function makePlayerMesh(ch) {
   const skull = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 11), mat(skin));
   skull.scale.set(0.94, 1.15, 0.92);
   head.add(skull);
-  // hair — Elvis pompadour: full base coverage + swept-back sides + tall front crest
-  // base — envelopes entire skull so no skin shows through
+  // hair — Elvis pompadour: covers top/sides/back but NOT the front face (skin shows through)
+  // base — covers skull top, sides and back; z-scale kept short so face stays skin-coloured
   const hBase = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 8), mat(ch.hair));
-  hBase.scale.set(0.97, 1.20, 0.96); hBase.position.set(0, 0.01, 0);
+  hBase.scale.set(0.97, 1.20, 0.62); hBase.position.set(0, 0.01, -0.08);
   head.add(hBase);
   // pompadour — tall swept-back crest above forehead
   const hPom = new THREE.Mesh(new THREE.SphereGeometry(0.34, 8, 6), mat(ch.hair));
@@ -961,23 +961,23 @@ function animatePlayer(dt, moving) {
   // push-up attack: body dives forward near-horizontal, shockwave at each rep bottom
   if (P.attackT > 0) {
     P.attackT -= dt;
-    const k = 1 - Math.max(0, P.attackT) / 0.32;
-    // double push character gets two reps in the same window
     const isDouble = !!(P.weapons && P.weapons.boomerang);
-    const arc = isDouble
-      ? Math.abs(Math.sin(k * Math.PI * 2))   // two full cycles
-      : Math.sin(k * Math.PI);                 // one cycle
-    // forward dive — 1.55 ≈ 89° = nearly horizontal
-    rig.hips.rotation.x = damp(rig.hips.rotation.x,  1.55 * arc, 22, dt);
-    rig.hips.position.y = 0.92 - arc * 0.58;
-    rig.armL.rotation.x = damp(rig.armL.rotation.x, -1.35 * arc, 22, dt);
-    rig.armR.rotation.x = damp(rig.armR.rotation.x, -1.35 * arc, 22, dt);
-    rig.armL.rotation.z = damp(rig.armL.rotation.z, -0.55 * arc - 0.12, 20, dt);
-    rig.armR.rotation.z = damp(rig.armR.rotation.z,  0.55 * arc + 0.12, 20, dt);
+    const dur = isDouble ? 0.64 : 0.32;
+    const k = 1 - Math.max(0, P.attackT) / dur;
+    // double push: attackT runs for 0.64s giving two full sin cycles
+    const arc = Math.sin(k * Math.PI * (isDouble ? 2 : 1));
+    const arcAbs = Math.abs(arc);
+    // forward dive — 1.55 ≈ 89° = nearly horizontal (arcAbs so double never goes negative)
+    rig.hips.rotation.x = damp(rig.hips.rotation.x,  1.55 * arcAbs, 22, dt);
+    rig.hips.position.y = 0.92 - arcAbs * 0.58;
+    rig.armL.rotation.x = damp(rig.armL.rotation.x, -1.35 * arcAbs, 22, dt);
+    rig.armR.rotation.x = damp(rig.armR.rotation.x, -1.35 * arcAbs, 22, dt);
+    rig.armL.rotation.z = damp(rig.armL.rotation.z, -0.55 * arcAbs - 0.12, 20, dt);
+    rig.armR.rotation.z = damp(rig.armR.rotation.z,  0.55 * arcAbs + 0.12, 20, dt);
     rig.legL.rotation.x = damp(rig.legL.rotation.x,  0, 14, dt);
     rig.legR.rotation.x = damp(rig.legR.rotation.x,  0, 14, dt);
-    // shockwave on each rising edge above threshold (fires once or twice for double)
-    const peakNow = arc > 0.88;
+    // shockwave on each peak (once for single, twice for double)
+    const peakNow = arcAbs > 0.88;
     if (peakNow && !rig._wasPeak) burst(P.pos, 0xcfc4a8, 6, 3.2, 2.6);
     rig._wasPeak = peakNow;
     if (k < 0.05) rig._wasPeak = false;
@@ -1753,7 +1753,7 @@ function fireWeapons(dt) {
       const s = boomStats(lvl);
       const tgt = nearestEnemy(30);
       w.timer = s.cd * P.cdMult;
-      P.attackT = 0.32;
+      P.attackT = 0.64;  // double duration so animation runs two full reps
       for (let k = 0; k < s.n; k++) {
         const m = new THREE.Mesh(boomGeo, boomMat);
         m.position.set(P.pos.x, P.pos.y + 1.3, P.pos.z);
