@@ -775,7 +775,8 @@ function makePlayerMesh(ch) {
   const head = rig.head = new THREE.Group();
   head.position.y = 0.98;
   hips.add(head);
-  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 11), mat(skin));
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 11), mat(skin));
+  skull.scale.set(0.86, 1.12, 0.9);
   head.add(skull);
   const hairM = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8, 0, Math.PI*2, 0, Math.PI*0.55), mat(ch.hair));
   hairM.position.y = 0.035;
@@ -832,11 +833,49 @@ function makePlayerMesh(ch) {
     head.add(spike);
   }
 
-    // back hair shell, fills the rear of the head so hair wraps around
-  const backHair = new THREE.Mesh(new THREE.SphereGeometry(0.355, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62), hairDarkMat);
-  backHair.position.set(0, 0.07, -0.035);
-  backHair.scale.set(1.02, 0.95, 0.9);
+      // full back hair volume, larger than skull so it changes the silhouette
+  const backHair = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.72), hairDarkMat);
+  backHair.position.set(0, 0.095, -0.055);
+  backHair.scale.set(0.98, 1.02, 1.05);
   head.add(backHair);
+
+  // rear hair bulk, makes the back look like hair mass, not painted skull
+  const rearHairBulk = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.36, 0.26), hairDarkMat);
+  rearHairBulk.position.set(0, 0.03, -0.245);
+  rearHairBulk.rotation.x = 0.05;
+  head.add(rearHairBulk);
+
+  // lower rear hair, closes the gap at the nape
+  const napeHair = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.18, 0.18), hairDarkMat);
+  napeHair.position.set(0, -0.16, -0.255);
+  napeHair.rotation.x = 0.12;
+  head.add(napeHair);
+
+  // thick side hair volumes, visible from profile
+  for (const sx of [-0.36, 0.36]) {
+    const sideMass = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.36, 0.23), hairDarkMat);
+    sideMass.position.set(sx, 0.04, -0.06);
+    sideMass.rotation.z = sx < 0 ? -0.12 : 0.12;
+    sideMass.rotation.y = sx < 0 ? 0.18 : -0.18;
+    head.add(sideMass);
+  }
+
+  // rear spikes, so the back reads as messy hair, not a helmet
+  const rearSpikes = [
+    [-0.22, 0.23, -0.33, 0.16, 0.18, 0.18, -0.45],
+    [0.00, 0.28, -0.35, 0.18, 0.2, 0.18, 0.05],
+    [0.22, 0.22, -0.33, 0.16, 0.18, 0.18, 0.45],
+    [-0.14, 0.02, -0.38, 0.13, 0.16, 0.15, -0.2],
+    [0.14, 0.02, -0.38, 0.13, 0.16, 0.15, 0.2]
+  ];
+
+  for (const [x, y, z, w, h, d, rz] of rearSpikes) {
+    const rearSpike = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), hairMat);
+    rearSpike.position.set(x, y, z);
+    rearSpike.rotation.z = rz;
+    rearSpike.rotation.x = 0.18;
+    head.add(rearSpike);
+  }
 
   // rear lower hair mass
   const lowerBackHair = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.22, 0.16), hairDarkMat);
