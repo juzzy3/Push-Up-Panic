@@ -138,8 +138,8 @@
   </div>
 
   <div class="screen" id="menu" style="display:flex">
-    <div class="title">CUBE BASHER</div>
-    <div class="subtitle">~ they're evil cubes. you have a hammer. ~</div>
+    <div class="title">PUSH UP PANIC</div>
+    <div class="subtitle">~ they're evil cubes. you do push ups. ~</div>
     <div id="menuCoins">🪙 0 coins</div>
     <div class="charRow" id="charRow"></div>
     <div class="btnRow">
@@ -743,11 +743,11 @@ scene.add(motes);
    PLAYER — little humanoid hero with a procedural rig
 ============================================================ */
 const CHARACTERS = [
-  { id:'bonky', emoji:'🔨', name:'BONKY',  desc:'The classic. Balanced stats.<br>Starts with Basher Hammer.', hp:100, speed:8.0, weapon:'hammer',
+  { id:'bonky', emoji:'💪', name:'PUSHY',       desc:'The classic. Balanced stats.<br>Starts with Single Push Up.', hp:100, speed:8.0, weapon:'hammer',
     shirt:0xb84040, pants:0x1a1a1a, hair:0x5a3413, band:0x5a3413, build:1.0 },
-  { id:'zippy', emoji:'🪃', name:'ZIPPY',  desc:'+25% move speed, fragile.<br>Starts with Boomerang.',       hp:75,  speed:10.0, weapon:'boomerang',
+  { id:'zippy', emoji:'🤸', name:'DOUBLE PUSH', desc:'+25% move speed, fragile.<br>Double Push Ups — strikes twice per attack.', hp:75,  speed:10.0, weapon:'boomerang',
     shirt:0x3aa8e8, pants:0x2c3e66, hair:0xf2e23e, band:0xff5577, build:0.9 },
-  { id:'chonk', emoji:'💀', name:'CHONK',  desc:'+60 max HP, a bit slow.<br>Starts with Bash Orbs.',         hp:160, speed:7.0, weapon:'orbs',
+  { id:'chonk', emoji:'🏋️', name:'PUSH BALLS',  desc:'+60 max HP, a bit slow.<br>Starts with Push Balls.',         hp:160, speed:7.0, weapon:'orbs',
     shirt:0x8a93a8, pants:0x3a3f52, hair:0x2a2a33, band:0x7dff6a, build:1.18 },
 ];
 let chosenChar = 0;
@@ -778,22 +778,26 @@ function makePlayerMesh(ch) {
   const skull = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 11), mat(skin));
   skull.scale.set(0.94, 1.15, 0.92);
   head.add(skull);
-  // hair — messy swept-up, five overlapping blobs for 3D volume
-  const hCrown = new THREE.Mesh(new THREE.SphereGeometry(0.40, 10, 8), mat(ch.hair));
-  hCrown.scale.set(0.95, 1.08, 0.86); hCrown.position.set(-0.03, 0.34, -0.05);
+  // hair — messy swept-up spiky volume
+  const hCrown = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 6), mat(ch.hair));
+  hCrown.scale.set(0.88, 1.55, 0.78); hCrown.position.set(-0.03, 0.38, -0.05);
   head.add(hCrown);
-  const hFront = new THREE.Mesh(new THREE.SphereGeometry(0.30, 9, 7), mat(ch.hair));
-  hFront.scale.set(1.28, 0.70, 0.72); hFront.position.set(0.06, 0.27, 0.13);
+  const hFront = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 6), mat(ch.hair));
+  hFront.scale.set(1.20, 1.15, 0.62); hFront.position.set(0.07, 0.32, 0.15);
   head.add(hFront);
-  const hSideL = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), mat(ch.hair));
-  hSideL.scale.set(0.68, 1.05, 0.90); hSideL.position.set(-0.38, 0.14, 0.0);
+  const hSideL = new THREE.Mesh(new THREE.SphereGeometry(0.20, 7, 5), mat(ch.hair));
+  hSideL.scale.set(0.62, 1.30, 0.82); hSideL.position.set(-0.37, 0.18, 0.0);
   head.add(hSideL);
-  const hSideR = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), mat(ch.hair));
-  hSideR.scale.set(0.68, 1.05, 0.90); hSideR.position.set(0.38, 0.14, 0.0);
+  const hSideR = new THREE.Mesh(new THREE.SphereGeometry(0.20, 7, 5), mat(ch.hair));
+  hSideR.scale.set(0.62, 1.30, 0.82); hSideR.position.set(0.37, 0.18, 0.0);
   head.add(hSideR);
-  const hBack = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 6), mat(ch.hair));
-  hBack.scale.set(1.05, 0.82, 0.72); hBack.position.set(0, 0.10, -0.36);
+  const hBack = new THREE.Mesh(new THREE.SphereGeometry(0.22, 7, 5), mat(ch.hair));
+  hBack.scale.set(1.00, 1.10, 0.68); hBack.position.set(0, 0.12, -0.36);
   head.add(hBack);
+  // spike tip — top point of the swept-up mass
+  const hSpike = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 5), mat(ch.hair));
+  hSpike.scale.set(0.55, 1.80, 0.55); hSpike.position.set(0.04, 0.60, 0.02);
+  head.add(hSpike);
   // eyes — white + warm brown iris + dark pupil
   const eyeMat  = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const irisMat = new THREE.MeshBasicMaterial({ color: 0x7a5020 });
@@ -840,17 +844,20 @@ function makePlayerMesh(ch) {
   const bjC = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.065, 0.014), beardMat);
   bjC.position.set(0, -0.21, 0.36); head.add(bjC);
 
-  // arms — pivot at shoulder
-  const armGeo = new THREE.CapsuleGeometry(0.105, 0.34, 4, 7);
+  // arms — pivot at shoulder, t-shirt short sleeve
   const handGeo = new THREE.SphereGeometry(0.13, 8, 8);
   for (const [key, sx] of [['armL', -1], ['armR', 1]]) {
     const arm = rig[key] = new THREE.Group();
     arm.position.set(sx*0.45, 0.6, 0);
-    const upper = new THREE.Mesh(armGeo, mat(ch.shirt));
-    upper.position.y = -0.22;
+    // short sleeve cap (shirt colour, shoulder to mid-arm only)
+    const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.108, 0.14, 4, 6), mat(ch.shirt));
+    sleeve.position.y = -0.11;
+    // bare forearm (skin, elbow to wrist)
+    const forearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.094, 0.22, 4, 6), mat(skin));
+    forearm.position.y = -0.38;
     const hand = new THREE.Mesh(handGeo, mat(skin));
     hand.position.y = -0.5;
-    arm.add(upper, hand);
+    arm.add(sleeve, forearm, hand);
     arm.rotation.z = sx * 0.12;
     hips.add(arm);
     rig[key + 'Hand'] = hand;
@@ -960,6 +967,9 @@ function animatePlayer(dt, moving) {
     // arms extend toward the ground to brace (-ve in body-local space = world-downward when body is forward)
     rig.armL.rotation.x = damp(rig.armL.rotation.x, -1.3 * arc, 22, dt);
     rig.armR.rotation.x = damp(rig.armR.rotation.x, -1.3 * arc, 22, dt);
+    // spread arms wide away from body (push-up width)
+    rig.armL.rotation.z = damp(rig.armL.rotation.z, -0.55 * arc - 0.12, 20, dt);
+    rig.armR.rotation.z = damp(rig.armR.rotation.z,  0.55 * arc + 0.12, 20, dt);
     // legs straighten out behind (plank position)
     rig.legL.rotation.x = damp(rig.legL.rotation.x,  0, 14, dt);
     rig.legR.rotation.x = damp(rig.legR.rotation.x,  0, 14, dt);
@@ -968,6 +978,10 @@ function animatePlayer(dt, moving) {
       burst(P.pos, 0xcfc4a8, 6, 3.2, 2.6);
     }
     if (k < 0.1) rig._pushHit = false;
+  } else {
+    // return arms to neutral z-spread after push-up
+    rig.armL.rotation.z = damp(rig.armL.rotation.z, -0.12, 8, dt);
+    rig.armR.rotation.z = damp(rig.armR.rotation.z,  0.12, 8, dt);
   }
 
   // cape flutter — lifts with speed, flares on jumps
@@ -1580,13 +1594,13 @@ function gainXP(v) {
 ============================================================ */
 const WEAPONS = {
   hammer: {
-    name: 'Basher Hammer', emoji: '🔨',
-    desc: l => `Slams the ground around you.<br>DMG ${hammerStats(l).dmg} · radius ${hammerStats(l).r.toFixed(1)}`,
+    name: 'Single Push Up', emoji: '💪',
+    desc: l => `Drives a push up into the ground around you.<br>DMG ${hammerStats(l).dmg} · radius ${hammerStats(l).r.toFixed(1)}`,
     max: 8, timer: 0,
   },
   orbs: {
-    name: 'Bash Orbs', emoji: '🪩',
-    desc: l => `${orbStats(l).n} orbs circle you, smacking<br>anything they touch. DMG ${orbStats(l).dmg}`,
+    name: 'Push Balls', emoji: '🪩',
+    desc: l => `${orbStats(l).n} push balls orbit you, smashing<br>anything they touch. DMG ${orbStats(l).dmg}`,
     max: 8, timer: 0,
   },
   fireball: {
@@ -1600,8 +1614,8 @@ const WEAPONS = {
     max: 8, timer: 0,
   },
   boomerang: {
-    name: 'Boomerang', emoji: '🪃',
-    desc: l => `Throws ${boomStats(l).n} piercing boomerang${boomStats(l).n>1?'s':''}<br>that fly out and return. DMG ${boomStats(l).dmg}`,
+    name: 'Double Push Up', emoji: '🤸',
+    desc: l => `Launches ${boomStats(l).n} push wave${boomStats(l).n>1?'s':''}<br>that surge out and return. DMG ${boomStats(l).dmg}`,
     max: 8, timer: 0,
   },
   frost: {
