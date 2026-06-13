@@ -576,161 +576,137 @@ const Music = (() => {
   function stepGame(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
+    // disco bass — octave jump on off-beats 3 & 7
     if (sub !== 1 && sub !== 5) {
       const bn = (sub === 3 || sub === 7) ? B.root + 12 : (sub === 4 ? B.root + 7 : B.root);
       tone(ctx, mtof(bn - 12), t, SPB * 0.62, 'sawtooth', 0.28);
     }
-    for (let i = 0; i < 3; i++) tone(ctx, mtof(B.arp[i%3]+12), t+i*(SPB/3.3), SPB/3.6, 'square', 0.018);
-    if (sub === 3 || sub === 7) {
-      tone(ctx, mtof(B.arp[0]+12), t, SPB*0.22, 'sawtooth', 0.055);
-      tone(ctx, mtof(B.arp[2]+12), t, SPB*0.22, 'sawtooth', 0.040);
-    }
+    // single arp note per step (was 3 — biggest GC win)
+    tone(ctx, mtof(B.arp[(sub * 2) % 4] + 12), t, SPB * 0.45, 'square', 0.022);
+    // off-beat chord stab on beat 2+ only
+    if (sub === 3) { tone(ctx, mtof(B.arp[0] + 12), t, SPB * 0.22, 'sawtooth', 0.05); }
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.78, 'square', 0.065);
-    if (sub === 0) tone(ctx, mtof(B.arp[1]+24), t, SPB*1.6, 'triangle', 0.042);
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.78, 'square', 0.065);
+    // four-on-the-floor kick
     if (sub % 2 === 0) kick(ctx, t);
+    // combined snare+hat into one noise call per off-beat
     if (sub === 2 || sub === 6) noise(ctx, t, 0.11, 0.24, 1100);
-    if (sub % 2 === 1) noise(ctx, t, 0.06, 0.07, 5000);
+    else if (sub % 2 === 1) noise(ctx, t, 0.04, 0.055, 5500);
   }
 
   function stepMenu(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // slow sweeping pads — long triangle chords, gentle bass, no drums
+    // slow sweeping pad — only fire on beat 1 (long notes cover the bar)
     if (sub === 0) {
-      tone(ctx, mtof(B.root - 12), t, SPB*7, 'triangle', 0.22);        // bass
-      tone(ctx, mtof(B.arp[0]), t, SPB*7, 'triangle', 0.10);           // pad low
-      tone(ctx, mtof(B.arp[2]), t, SPB*7, 'triangle', 0.08);           // pad mid
-      tone(ctx, mtof(B.arp[3]+12), t, SPB*7, 'sine', 0.05);            // shimmer
+      tone(ctx, mtof(B.root - 12), t, SPB * 7, 'triangle', 0.22);
+      tone(ctx, mtof(B.arp[0]), t, SPB * 7, 'triangle', 0.09);
+      tone(ctx, mtof(B.arp[2]), t, SPB * 7, 'triangle', 0.07);
     }
-    // gentle arp sparkle on odd steps
-    if (sub % 2 === 1) tone(ctx, mtof(B.arp[sub%4]+24), t, SPB*0.9, 'sine', 0.030);
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*1.8, 'triangle', 0.055);
-    // soft brush hi-hat only
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 1.8, 'triangle', 0.055);
     if (sub === 2 || sub === 6) noise(ctx, t, 0.08, 0.04, 4000);
   }
 
   function stepBoss(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // heavy sawtooth bass — two octave stomp
-    tone(ctx, mtof(B.root - 24), t, SPB*0.55, 'sawtooth', 0.32);
-    if (sub === 2 || sub === 5) tone(ctx, mtof(B.root - 12), t, SPB*0.4, 'sawtooth', 0.18);
-    // dissonant SID arp — faster, more chaotic
-    for (let i = 0; i < 4; i++) tone(ctx, mtof(B.arp[i%4]+0), t+i*(SPB/4.2), SPB/4.5, 'sawtooth', 0.022);
+    // heavy sawtooth bass
+    tone(ctx, mtof(B.root - 24), t, SPB * 0.55, 'sawtooth', 0.30);
+    // single dissonant arp note (was 4)
+    tone(ctx, mtof(B.arp[sub % 4]), t, SPB * 0.40, 'sawtooth', 0.025);
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.70, 'square', 0.062);
-    // thundering kick on every beat + extra on 3
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.70, 'square', 0.062);
+    // thundering kick on every beat
     if (sub % 2 === 0) kick(ctx, t, 200, 0.16, 0.62);
-    if (sub === 3) kick(ctx, t, 120, 0.10, 0.38);
-    // hard snare + clap layer
-    if (sub === 2 || sub === 6) { noise(ctx, t, 0.08, 0.30, 900); noise(ctx, t, 0.05, 0.18, 3000); }
-    if (sub % 2 === 1) noise(ctx, t, 0.02, 0.05, 8000);
+    // snare on 2+4, tight hat on off-beats (single noise call)
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.09, 0.28, 900);
+    else if (sub % 2 === 1) noise(ctx, t, 0.02, 0.05, 8000);
   }
 
   function stepLevelup(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // triumphant major — bright square bass + punchy kick
-    tone(ctx, mtof(B.root - 12), t, SPB*0.58, 'square', 0.24);
-    for (let i = 0; i < 3; i++) tone(ctx, mtof(B.arp[i%3]+12), t+i*(SPB/3.1), SPB/3.4, 'square', 0.025);
-    if (sub === 0) { tone(ctx, mtof(B.arp[2]+24), t, SPB*3, 'triangle', 0.07); }
+    // bright triumphant square bass
+    tone(ctx, mtof(B.root - 12), t, SPB * 0.58, 'square', 0.24);
+    // single arp note
+    tone(ctx, mtof(B.arp[sub % 4] + 12), t, SPB * 0.42, 'square', 0.030);
+    if (sub === 0) tone(ctx, mtof(B.arp[2] + 24), t, SPB * 3, 'triangle', 0.07);
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.75, 'square', 0.072);
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.75, 'square', 0.072);
     if (sub === 0 || sub === 4) kick(ctx, t, 140, 0.10);
     if (sub === 2 || sub === 6) noise(ctx, t, 0.08, 0.20, 1400);
-    if (sub % 2 === 1) noise(ctx, t, 0.03, 0.06, 6500);
+    else if (sub % 2 === 1) noise(ctx, t, 0.025, 0.05, 6500);
   }
 
   function stepDead(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // mournful — slow pads, no drums, descending feel
+    // mournful pads — fire once per bar only
     if (sub === 0) {
-      tone(ctx, mtof(B.root - 12), t, SPB*7, 'sine', 0.18);
-      tone(ctx, mtof(B.arp[0]), t, SPB*7, 'triangle', 0.09);
-      tone(ctx, mtof(B.arp[1]), t, SPB*7, 'triangle', 0.06);
+      tone(ctx, mtof(B.root - 12), t, SPB * 7, 'sine', 0.18);
+      tone(ctx, mtof(B.arp[0]), t, SPB * 7, 'triangle', 0.08);
     }
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*2.5, 'sine', 0.048);
-    // very occasional soft low tom
-    if (sub === 4) noise(ctx, t, 0.14, 0.06, 200);
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 2.5, 'sine', 0.048);
   }
 
   function stepWin(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // euphoric major — bright, bouncy, celebratory
-    tone(ctx, mtof(B.root - 12), t, SPB*0.58, 'sawtooth', 0.24);
-    for (let i = 0; i < 3; i++) tone(ctx, mtof(B.arp[i%3]+12), t+i*(SPB/3.0), SPB/3.3, 'square', 0.022);
-    if (sub === 1 || sub === 5) {
-      tone(ctx, mtof(B.arp[0]+12), t, SPB*0.2, 'sawtooth', 0.05);
-      tone(ctx, mtof(B.arp[2]+12), t, SPB*0.2, 'sawtooth', 0.04);
-    }
+    // euphoric major bounce
+    tone(ctx, mtof(B.root - 12), t, SPB * 0.58, 'sawtooth', 0.24);
+    // single arp (was 3)
+    tone(ctx, mtof(B.arp[sub % 4] + 12), t, SPB * 0.42, 'square', 0.025);
+    if (sub === 1 || sub === 5) tone(ctx, mtof(B.arp[2] + 12), t, SPB * 0.2, 'sawtooth', 0.045);
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.72, 'square', 0.070);
-    if (sub === 0) tone(ctx, mtof(B.arp[1]+24), t, SPB*1.5, 'triangle', 0.050);
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.72, 'square', 0.070);
     if (sub % 2 === 0) kick(ctx, t, 150, 0.11);
     if (sub === 2 || sub === 6) noise(ctx, t, 0.09, 0.22, 1200);
-    if (sub % 2 === 1) noise(ctx, t, 0.05, 0.07, 5500);
+    else if (sub % 2 === 1) noise(ctx, t, 0.04, 0.065, 5500);
   }
 
   function stepLab(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // jazzy chill — sine pads, light bass, brushed hi-hat, no loud kicks
-    if (sub === 0 || sub === 4) tone(ctx, mtof(B.root - 12), t, SPB*1.8, 'sine', 0.20);
-    if (sub === 2) tone(ctx, mtof(B.root - 5), t, SPB*0.9, 'sine', 0.12);
-    tone(ctx, mtof(B.arp[sub%4]+12), t, SPB*1.1, 'sine', 0.040);
-    tone(ctx, mtof(B.arp[(sub+2)%4]+24), t, SPB*0.8, 'triangle', 0.022);
+    // jazzy chill — one bass, one pad tone per step
+    if (sub === 0 || sub === 4) tone(ctx, mtof(B.root - 12), t, SPB * 1.8, 'sine', 0.20);
+    tone(ctx, mtof(B.arp[sub % 4] + 12), t, SPB * 1.0, 'sine', 0.038);
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*1.4, 'triangle', 0.050);
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 1.4, 'triangle', 0.050);
     if (sub === 0) kick(ctx, t, 100, 0.18, 0.28);
-    if (sub === 4) kick(ctx, t, 80, 0.14, 0.18);
     if (sub === 2 || sub === 6) noise(ctx, t, 0.10, 0.08, 2000);
-    if (sub % 2 === 1) noise(ctx, t, 0.04, 0.03, 5000);
+    else if (sub % 2 === 1) noise(ctx, t, 0.03, 0.025, 5000);
   }
 
   function stepDanger(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // frantic — every step is dense, dissonant, no rests
-    tone(ctx, mtof(B.root - 24), t, SPB*0.45, 'sawtooth', 0.30);
-    tone(ctx, mtof(B.root - 12), t, SPB*0.45, 'sawtooth', 0.16);
-    for (let i = 0; i < 4; i++) tone(ctx, mtof(B.arp[i%4]+0), t+i*(SPB/4.1), SPB/4.4, 'square', 0.020);
+    // frantic but lean — single bass, single arp, no arp loops
+    tone(ctx, mtof(B.root - 24), t, SPB * 0.42, 'sawtooth', 0.30);
+    tone(ctx, mtof(B.arp[sub % 3]), t, SPB * 0.35, 'square', 0.022);
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.55, 'square', 0.070);
-    // double kick on EVERY step
-    kick(ctx, t, 180, 0.08, 0.50);
-    if (sub % 2 === 0) kick(ctx, t, 140, 0.12, 0.32);
-    if (sub === 1 || sub === 3 || sub === 5 || sub === 7) noise(ctx, t, 0.03, 0.10, 1500);
-    noise(ctx, t, 0.02, 0.04, 7500);
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.55, 'square', 0.068);
+    // kick on beats only (was every single step)
+    if (sub % 2 === 0) kick(ctx, t, 180, 0.08, 0.52);
+    // alternating snare/hat — one noise call per step max
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.07, 0.22, 1200);
+    else if (sub % 2 === 1) noise(ctx, t, 0.025, 0.08, 1600);
   }
 
   function stepBalls(ctx, t, s, T, SPB) {
     const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
     const B = T.bars[bar];
-    // heavy power groove — thick sawtooth bass, slower feel, big kick
+    // heavy power groove — thick bass, single arp, big kick
     tone(ctx, mtof(B.root - 24), t, SPB * 0.80, 'sawtooth', 0.30);
-    if (sub === 3 || sub === 5) tone(ctx, mtof(B.root - 12), t, SPB * 0.55, 'sawtooth', 0.18);
-    // slower 2-note arp instead of 3 — more spacious
-    for (let i = 0; i < 2; i++) tone(ctx, mtof(B.arp[i*2]+12), t+i*(SPB/2.2), SPB/2.5, 'square', 0.020);
-    // power chord stab on beat 1
-    if (sub === 0) {
-      tone(ctx, mtof(B.arp[0]+12), t, SPB*1.2, 'sawtooth', 0.06);
-      tone(ctx, mtof(B.arp[2]+12), t, SPB*1.2, 'sawtooth', 0.04);
-    }
+    if (sub === 3 || sub === 5) tone(ctx, mtof(B.root - 12), t, SPB * 0.55, 'sawtooth', 0.16);
+    // single arp note (was 2-note loop)
+    tone(ctx, mtof(B.arp[(sub * 2) % 4] + 12), t, SPB * 0.55, 'square', 0.022);
     const mel = T.melody[s % T.steps];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.90, 'triangle', 0.070);
-    // heavy stomp — kick on 1, 3, plus syncopated extra
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.90, 'triangle', 0.068);
     if (sub === 0 || sub === 4) kick(ctx, t, 200, 0.18, 0.60);
-    if (sub === 6) kick(ctx, t, 160, 0.12, 0.40);
-    // big snare crack
-    if (sub === 2 || sub === 6) { noise(ctx, t, 0.14, 0.28, 800); noise(ctx, t, 0.06, 0.12, 3500); }
-    if (sub % 2 === 1) noise(ctx, t, 0.04, 0.045, 6000);
-  }
-
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.12, 0.26, 800);
+    else if (sub % 2 === 1) noise(ctx, t, 0.035, 0.045, 6000);
   const RENDERERS = {
     game_pushy:stepGame, game_double:stepGame, game_balls:stepBalls,
     menu:stepMenu, boss:stepBoss, levelup:stepLevelup,
@@ -743,7 +719,7 @@ const Music = (() => {
     const T = TRACKS[currentTrack];
     const SPB = 60 / T.bpm / 2;
     const render = RENDERERS[currentTrack] || stepGame;
-    while (nextT < ctx.currentTime + 0.35) {
+    while (nextT < ctx.currentTime + 0.25) {
       render(ctx, nextT, step, T, SPB);
       step = (step + 1) % T.steps;
       nextT += SPB;
