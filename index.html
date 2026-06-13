@@ -286,8 +286,8 @@ const Music = (() => {
       ],
     },
 
-    // ── GAMEPLAY — disco/80s dance (the existing 32-bar track)
-    game: {
+    // ── PUSHY gameplay — 32-bar disco/80s dance (balanced character)
+    game_pushy: {
       bpm: 126, steps: 256,
       bars: [
         { root:45, arp:[57,60,64,67] }, { root:41, arp:[53,57,60,65] },
@@ -324,6 +324,80 @@ const Music = (() => {
         84,-1,81,-1,79,-1,76,72,  83,-1,79,-1,76,-1,79,83,
         81,79,76,74,72,-1,76,79,  76,75,73,71,-1,71,73,76,
         77,79,81,-1,84,81,79,77,  79,81,83,86,83,81,79,76,
+      ],
+    },
+
+    // ── DOUBLE PUSH gameplay — fast synth-pop electronic, speedy character
+    game_double: {
+      bpm: 148, steps: 128,
+      bars: [
+        // Section A — zippy energy, Dm groove
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:45, arp:[57,60,64,69] }, // Am7
+        { root:41, arp:[53,57,60,65] }, // F
+        { root:48, arp:[55,60,64,67] }, // C
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:41, arp:[53,57,60,65] }, // F
+        { root:43, arp:[55,59,62,67] }, // G hold
+        // Section B — higher, more intense
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:45, arp:[57,60,64,67] }, // Am
+        { root:40, arp:[52,56,59,64] }, // E tension
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:41, arp:[53,57,60,65] }, // F
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:40, arp:[52,56,59,64] }, // E big resolve
+      ],
+      melody: [
+        // Section A — punchy, rapid, lots of notes
+        74,-1,77,-1,81,-1,79,77,   74,77,81,-1,84,-1,81,79,
+        77,-1,81,-1,84,-1,81,77,   79,-1,76,-1,72,-1,74,76,
+        74,77,74,72,69,-1,72,74,   71,-1,74,-1,79,-1,77,74,
+        77,79,81,-1,79,-1,77,-1,   76,-1,74,-1,72,74,76,77,
+        // Section B — higher register, driving
+        81,-1,84,-1,86,-1,84,81,   81,84,86,-1,88,-1,86,84,
+        81,-1,79,-1,76,-1,79,81,   80,79,77,76,74,73,71,69,
+        74,77,81,-1,84,-1,81,77,   77,-1,79,-1,81,79,77,74,
+        76,74,72,71,72,74,76,77,   74,72,69,-1,71,72,74,76,
+      ],
+    },
+
+    // ── PUSH BALLS gameplay — heavy driving groove, tanky character
+    game_balls: {
+      bpm: 108, steps: 128,
+      bars: [
+        // Section A — Em power groove
+        { root:40, arp:[52,55,59,64] }, // Em
+        { root:40, arp:[52,55,59,64] }, // Em
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:38, arp:[50,53,57,62] }, // D (as V of Em: actually D major root=50... let's use 50)
+        { root:40, arp:[52,55,59,64] }, // Em
+        { root:45, arp:[57,60,64,67] }, // Am
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:38, arp:[50,54,57,62] }, // D major
+        // Section B — darker, deeper
+        { root:40, arp:[52,55,59,64] }, // Em
+        { root:35, arp:[47,50,54,59] }, // Bm
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:38, arp:[50,54,57,62] }, // D
+        { root:40, arp:[52,55,59,64] }, // Em
+        { root:33, arp:[45,48,52,57] }, // Am low (heavy dip)
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:40, arp:[52,55,59,64] }, // Em resolve
+      ],
+      melody: [
+        // Section A — powerful, spacious, heavy
+        76,-1,-1,-1,79,-1,76,-1,   -1,-1,81,-1,79,-1,76,74,
+        76,-1,79,-1,83,-1,79,-1,   76,-1,74,-1,71,-1,74,-1,
+        76,79,76,74,71,-1,74,76,   69,-1,72,-1,76,-1,74,72,
+        76,-1,79,-1,81,-1,79,76,   74,-1,71,-1,69,-1,71,74,
+        // Section B — deeper, more dramatic
+        76,-1,-1,-1,83,-1,81,-1,   79,-1,76,-1,74,-1,71,-1,
+        76,74,71,69,-1,69,71,74,   76,-1,78,-1,79,-1,78,76,
+        76,-1,79,81,83,-1,81,79,   69,-1,72,-1,76,-1,74,72,
+        79,81,83,-1,81,79,76,-1,   76,-1,-1,-1,-1,-1,76,-1,
       ],
     },
 
@@ -634,8 +708,34 @@ const Music = (() => {
     noise(ctx, t, 0.02, 0.04, 7500);
   }
 
-  const RENDERERS = { game:stepGame, menu:stepMenu, boss:stepBoss, levelup:stepLevelup,
-                      dead:stepDead, win:stepWin, lab:stepLab, danger:stepDanger };
+  function stepBalls(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // heavy power groove — thick sawtooth bass, slower feel, big kick
+    tone(ctx, mtof(B.root - 24), t, SPB * 0.80, 'sawtooth', 0.30);
+    if (sub === 3 || sub === 5) tone(ctx, mtof(B.root - 12), t, SPB * 0.55, 'sawtooth', 0.18);
+    // slower 2-note arp instead of 3 — more spacious
+    for (let i = 0; i < 2; i++) tone(ctx, mtof(B.arp[i*2]+12), t+i*(SPB/2.2), SPB/2.5, 'square', 0.020);
+    // power chord stab on beat 1
+    if (sub === 0) {
+      tone(ctx, mtof(B.arp[0]+12), t, SPB*1.2, 'sawtooth', 0.06);
+      tone(ctx, mtof(B.arp[2]+12), t, SPB*1.2, 'sawtooth', 0.04);
+    }
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.90, 'triangle', 0.070);
+    // heavy stomp — kick on 1, 3, plus syncopated extra
+    if (sub === 0 || sub === 4) kick(ctx, t, 200, 0.18, 0.60);
+    if (sub === 6) kick(ctx, t, 160, 0.12, 0.40);
+    // big snare crack
+    if (sub === 2 || sub === 6) { noise(ctx, t, 0.14, 0.28, 800); noise(ctx, t, 0.06, 0.12, 3500); }
+    if (sub % 2 === 1) noise(ctx, t, 0.04, 0.045, 6000);
+  }
+
+  const RENDERERS = {
+    game_pushy:stepGame, game_double:stepGame, game_balls:stepBalls,
+    menu:stepMenu, boss:stepBoss, levelup:stepLevelup,
+    dead:stepDead, win:stepWin, lab:stepLab, danger:stepDanger,
+  };
 
   function schedule() {
     if (!playing) return;
@@ -650,13 +750,17 @@ const Music = (() => {
     }
   }
 
+  let gameTrack = 'game_pushy'; // set per character on startGame
+
   return {
-    start() { this.play('game'); },
+    start() { this.play(gameTrack); },
+    setGameTrack(id) { gameTrack = id; },
+    resumeGame() { this.play(gameTrack); },
     play(id) {
       const ctx = ensure();
       playing = false;
       if (timer) { clearInterval(timer); timer = null; }
-      currentTrack = TRACKS[id] ? id : 'game';
+      currentTrack = TRACKS[id] ? id : gameTrack;
       step = 0; nextT = ctx.currentTime + 0.05;
       playing = true;
       timer = setInterval(schedule, 120);
@@ -1666,7 +1770,7 @@ function spawnEnemy(type, posOverride) {
   e.poolIdx = pool.list.length;
   pool.list.push(e);
   enemies.push(e);
-  if (def.boss) { G.boss = e; Sfx.bossroar(); document.getElementById('bossWrap').style.display='block'; Music.play('boss'); }
+  if (def.boss) { G.boss = e; Sfx.bossroar(); document.getElementById('bossWrap').style.display='block'; G._wasInDanger = false; Music.play('boss'); }
   return e;
 }
 
@@ -1695,7 +1799,7 @@ function killEnemy(e, idx) {
     G.boss = enemies.find(x => x.def.boss) || null;
     if (G.boss) document.getElementById('bossName').textContent = G.boss.bossName || 'BOSS';
     document.getElementById('bossWrap').style.display = G.boss ? 'block' : 'none';
-    if (!G.boss) Music.play('game'); // resume gameplay music when last boss dies
+    if (!G.boss) Music.resumeGame(); // resume gameplay music when last boss dies
   } else if (e.def.elite) {
     for (let i = 0; i < 4; i++) dropGem(p, 5, true);
     dropGold(p);
@@ -2633,7 +2737,7 @@ function resetGame() {
 
   G.t = 0; G.kills = 0; G.gold = 0; G.gemsBank = 0;
   G.spawnAcc = 0; G.eliteTimer = 60; G.bossSpawned = {}; G.boss = null;
-  G.pendingLevelups = 0; G.shake = 0;
+  G.pendingLevelups = 0; G.shake = 0; G._wasInDanger = false;
   G.combo = 0; G.comboT = 0; G.comboShown = -1;
   G.hitstop = 0; G.hurtUntil = 0; G.banked = false; G.earned = 0;
   camTargetV.set(0, terrainH(0, 0), 0);
@@ -2644,7 +2748,9 @@ function resetGame() {
 
 function startGame() {
   Sfx.ensure();
-  Music.play('game');
+  const charTracks = ['game_pushy', 'game_double', 'game_balls'];
+  Music.setGameTrack(charTracks[chosenChar] || 'game_pushy');
+  Music.resumeGame();
   resetGame();
   document.getElementById('menu').style.display = 'none';
   document.getElementById('deadScr').style.display = 'none';
@@ -2932,6 +3038,12 @@ function tick(now) {
     if (P.level !== G._lastLvl) { G._lastLvl = P.level; hudLvl.textContent = 'LV ' + P.level; }
     hudHpFill.style.width = Math.max(0, P.hp / P.maxhp * 100) + '%';
     hudHpText.textContent = Math.ceil(Math.max(0, P.hp)) + '/' + P.maxhp;
+    // danger music below 25% HP (only when not in boss/levelup track)
+    const inDanger = P.hp / P.maxhp < 0.25;
+    if (inDanger !== G._wasInDanger && !G.boss) {
+      G._wasInDanger = inDanger;
+      if (inDanger) Music.play('danger'); else Music.resumeGame();
+    }
     hudStam.style.width = (P.stamina / P.staminaMax * 100) + '%';
     hudStamOuter.classList.toggle('winded', P.winded);
 
