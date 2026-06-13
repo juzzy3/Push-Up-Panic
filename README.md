@@ -2,15 +2,15 @@
 
 *They're evil cubes. You have push ups.*
 
-**Cube Basher** is a fast, colorful 3D survivors-like (think *Vampire Survivors* meets low-poly 3D) that runs entirely in your browser. Survive 30 minutes against an ever-growing horde of menacing cubes, level up auto-firing weapons, climb cliffs, smash pots for food, and take down five towering bosses — then bank your gold to permanently upgrade your character between runs.
+**Push Up Panic** is a fast, colorful 3D survivors-like (think *Vampire Survivors* meets low-poly 3D) that runs entirely in your browser. Survive 30 minutes against an ever-growing horde of menacing cubes, level up auto-firing weapons, climb cliffs, smash pots for food, and take down five towering bosses — then bank your gold to permanently upgrade your character between runs.
 
 The whole game is a single `index.html` file. No build step, no dependencies to install — just a browser.
 
 ## ✨ Features
 
 - **30-minute runs** across a huge low-poly world with rolling hills, climbable mesas, and cliff ledges
-- **3 playable characters** — balanced Bonky, speedy Zippy, and tanky Chonk
-- **7 auto-firing weapons** (8 levels each): Basher Hammer, Bash Orbs, Fireball, Sky Zapper, Boomerang, Frost Nova, and the piercing Cube Cannon
+- **3 playable characters** — balanced Pushy, speedy Double Push, and tanky Push Balls
+- **7 auto-firing weapons** (8 levels each): Single Push Up, Push Balls, Fireball, Sky Zapper, Frisbee Push, Frost Nova, and the piercing Cube Cannon
 - **11 in-run passive upgrades** plus a sprint system with stamina management
 - **6 enemy types** — grunts, spider runners, tusked brutes, ranged spitters, elites, and five named bosses (MEGACUBE through OMEGACUBE)
 - **Metaprogression** — gold earned in runs becomes permanent coins, spent in the Upgrade Lab on 8 permanent character upgrades (saved in your browser)
@@ -34,7 +34,7 @@ Weapons fire automatically — your job is to move, dodge, and choose upgrades.
 
 ### Play in the browser (easiest)
 
-**▶️ [Play Cube Basher now](https://mreflow.github.io/cube-basher/)** — nothing to install, just click **BASH!**
+**▶️ [Play Push Up Panic now](https://juzzy3.github.io/Push-Up-Panic/)** — nothing to install, just click **PUSH!**
 
 ### Run it locally
 
@@ -43,8 +43,8 @@ Because the game uses JavaScript modules, browsers won't load it straight from a
 **1. Download the game** (all platforms):
 
 ```bash
-git clone https://github.com/mreflow/cube-basher.git
-cd cube-basher
+git clone https://github.com/juzzy3/Push-Up-Panic.git
+cd Push-Up-Panic
 ```
 
 …or click **Code → Download ZIP** on GitHub and unzip it.
@@ -71,13 +71,13 @@ Or, if you have [Node.js](https://nodejs.org): `npx serve .`
 python3 -m http.server 8000
 ```
 
-**3. Play:** open [http://localhost:8000](http://localhost:8000) in your browser and click **BASH!**
+**3. Play:** open [http://localhost:8000](http://localhost:8000) in your browser and click **PUSH!**
 
 > **Requirements:** a modern desktop browser (Chrome, Edge, Firefox, or Safari 16.4+) and an internet connection on first load (the three.js engine and fonts load from a CDN). Your save data (coins and Upgrade Lab purchases) lives in your browser's local storage.
 
 ## 📱 Mobile
 
-**Cube Basher is not currently playable on mobile.** The game requires a keyboard (WASD / Shift / Space) and mouse — phones and tablets will load the menu but can't control the game. Touch controls may come in a future update.
+**Push Up Panic is not currently playable on mobile.** The game requires a keyboard (WASD / Shift / Space) and mouse — phones and tablets will load the menu but can't control the game. Touch controls may come in a future update.
 
 ## 🧱 Tech
 
@@ -87,4 +87,4 @@ python3 -m http.server 8000
 
 ## 📄 License
 
-Do whatever you want with it. Bash responsibly.
+Do whatever you want with it. Push responsibly.
