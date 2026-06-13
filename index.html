@@ -253,90 +253,209 @@ const Sfx = (() => {
 ============================================================ */
 const Music = (() => {
   let gain = null, playing = false, timer = null, step = 0, nextT = 0, noiseBuf = null, muted = false;
-  const BPM = 126, SPB = 60/BPM/2; // 8th-note grid — classic disco/dance tempo
-
-  // 32-bar journey: Intro → Verse → Chorus → Funk Break → Big Build → Climax
-  const bars = [
-    // Section A — Intro groove (bars 0-7): Am F C G × 2
-    { root:45, arp:[57,60,64,67] },  // 0  Am
-    { root:41, arp:[53,57,60,65] },  // 1  F
-    { root:48, arp:[55,60,64,67] },  // 2  C
-    { root:43, arp:[55,59,62,67] },  // 3  G
-    { root:45, arp:[57,60,64,67] },  // 4  Am
-    { root:41, arp:[53,57,60,65] },  // 5  F
-    { root:43, arp:[55,59,62,67] },  // 6  G
-    { root:43, arp:[55,59,62,67] },  // 7  G hold
-    // Section B — Chorus (bars 8-15): bigger, higher energy
-    { root:45, arp:[57,60,64,67] },  // 8  Am
-    { root:45, arp:[57,60,64,67] },  // 9  Am
-    { root:41, arp:[53,57,60,65] },  // 10 F
-    { root:43, arp:[55,59,62,67] },  // 11 G
-    { root:45, arp:[57,60,64,67] },  // 12 Am
-    { root:38, arp:[50,53,57,62] },  // 13 Dm
-    { root:41, arp:[53,57,60,65] },  // 14 F
-    { root:40, arp:[52,56,59,64] },  // 15 E  (tension)
-    // Section C — Funk break (bars 16-23): Dm groove, lower register
-    { root:38, arp:[50,53,57,62] },  // 16 Dm
-    { root:38, arp:[50,53,57,62] },  // 17 Dm
-    { root:43, arp:[55,59,62,67] },  // 18 G
-    { root:45, arp:[57,60,64,67] },  // 19 Am
-    { root:38, arp:[50,53,57,62] },  // 20 Dm
-    { root:41, arp:[53,57,60,65] },  // 21 F
-    { root:43, arp:[55,59,62,67] },  // 22 G
-    { root:40, arp:[52,56,59,64] },  // 23 E
-    // Section D — Final build & climax (bars 24-31): runs, high notes, big finish
-    { root:45, arp:[57,60,64,67] },  // 24 Am
-    { root:41, arp:[53,57,60,65] },  // 25 F
-    { root:48, arp:[55,60,64,67] },  // 26 C
-    { root:43, arp:[55,59,62,67] },  // 27 G
-    { root:45, arp:[57,60,64,67] },  // 28 Am
-    { root:40, arp:[52,56,59,64] },  // 29 E
-    { root:41, arp:[53,57,60,65] },  // 30 F
-    { root:43, arp:[55,59,62,67] },  // 31 G  → loops back to Am
-  ];
-
-  // 256-step lead melody (32 bars × 8 eighth-notes), -1 = rest
-  const melody = [
-    // Section A — bouncy intro, fun singalong feel
-    69,-1,72,-1,76,-1,72,69,   // bar 0  Am
-    69,-1,65,-1,67,-1,65,64,   // bar 1  F
-    72,-1,76,-1,79,-1,76,72,   // bar 2  C
-    71,-1,67,-1,71,-1,72,71,   // bar 3  G
-    69,72,76,-1,79,-1,76,72,   // bar 4  Am  (more notes, building)
-    77,-1,76,-1,74,-1,72,71,   // bar 5  F
-    71,72,74,-1,76,-1,74,72,   // bar 6  G
-    72,-1,74,-1,76,74,72,71,   // bar 7  G hold
-    // Section B — chorus kicks up an octave, high energy
-    76,-1,79,-1,81,-1,79,76,   // bar 8  Am
-    76,79,81,-1,84,-1,81,79,   // bar 9  Am  (ascending run)
-    77,-1,81,-1,84,-1,81,79,   // bar 10 F
-    79,-1,83,-1,86,-1,83,81,   // bar 11 G   (high notes!)
-    81,-1,79,-1,76,-1,79,81,   // bar 12 Am
-    81,79,77,-1,74,-1,77,79,   // bar 13 Dm  (descend into Dm)
-    77,-1,79,-1,81,-1,79,77,   // bar 14 F
-    76,75,73,72,71,72,73,76,   // bar 15 E   (chromatic tension run)
-    // Section C — funk break, lower groove, laid back
-    74,-1,72,-1,69,-1,72,74,   // bar 16 Dm
-    74,72,69,-1,67,-1,69,72,   // bar 17 Dm  (funky dip)
-    71,-1,74,-1,76,-1,74,71,   // bar 18 G
-    69,-1,72,-1,74,-1,72,69,   // bar 19 Am
-    74,-1,77,-1,79,-1,77,74,   // bar 20 Dm  (rising funk line)
-    72,-1,76,-1,79,-1,76,72,   // bar 21 F
-    71,-1,74,-1,79,-1,74,71,   // bar 22 G
-    76,74,72,71,69,-1,71,72,   // bar 23 E   (chromatic fall, drama!)
-    // Section D — final build, ascending runs, maximum fun
-    76,79,81,84,81,79,76,-1,   // bar 24 Am  (full ascending run)
-    77,81,84,-1,81,79,77,-1,   // bar 25 F
-    84,-1,81,-1,79,-1,76,72,   // bar 26 C   (highest note! coming back down)
-    83,-1,79,-1,76,-1,79,83,   // bar 27 G
-    81,79,76,74,72,-1,76,79,   // bar 28 Am  (fast descend then climb)
-    76,75,73,71,-1,71,73,76,   // bar 29 E   (tension)
-    77,79,81,-1,84,81,79,77,   // bar 30 F   (triumphant climb)
-    79,81,83,86,83,81,79,76,   // bar 31 G   (big descending finale → loops to Am!)
-  ];
-
+  let currentTrack = 'game'; // active track id
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 
+  /* ---- TRACK DEFINITIONS ---- */
+  // Each track: { bpm, bars[], melody[], steps (loop length) }
+
+  const TRACKS = {
+
+    // ── MAIN MENU — cinematic, slow, sweeping minor orchestral feel
+    menu: {
+      bpm: 72, steps: 64,
+      bars: [
+        { root:45, arp:[57,60,64,67] }, // Am
+        { root:45, arp:[57,60,64,67] }, // Am
+        { root:41, arp:[53,57,60,65] }, // F
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:45, arp:[57,60,64,67] }, // Am
+        { root:40, arp:[52,56,59,64] }, // E
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:43, arp:[55,59,62,67] }, // G
+      ],
+      melody: [
+        69,-1,-1,-1,72,-1,76,-1,  // bar 0 Am  — slow, spacious
+        79,-1,-1,-1,76,-1,72,-1,  // bar 1 Am
+        77,-1,-1,-1,81,-1,79,-1,  // bar 2 F
+        79,-1,-1,-1,83,-1,81,-1,  // bar 3 G
+        81,-1,-1,-1,79,-1,76,-1,  // bar 4 Am
+        76,-1,75,-1,73,-1,71,-1,  // bar 5 E   — descending tension
+        74,-1,-1,-1,72,-1,69,-1,  // bar 6 Dm
+        71,-1,72,-1,74,-1,76,-1,  // bar 7 G   — rising to loop
+      ],
+    },
+
+    // ── GAMEPLAY — disco/80s dance (the existing 32-bar track)
+    game: {
+      bpm: 126, steps: 256,
+      bars: [
+        { root:45, arp:[57,60,64,67] }, { root:41, arp:[53,57,60,65] },
+        { root:48, arp:[55,60,64,67] }, { root:43, arp:[55,59,62,67] },
+        { root:45, arp:[57,60,64,67] }, { root:41, arp:[53,57,60,65] },
+        { root:43, arp:[55,59,62,67] }, { root:43, arp:[55,59,62,67] },
+        { root:45, arp:[57,60,64,67] }, { root:45, arp:[57,60,64,67] },
+        { root:41, arp:[53,57,60,65] }, { root:43, arp:[55,59,62,67] },
+        { root:45, arp:[57,60,64,67] }, { root:38, arp:[50,53,57,62] },
+        { root:41, arp:[53,57,60,65] }, { root:40, arp:[52,56,59,64] },
+        { root:38, arp:[50,53,57,62] }, { root:38, arp:[50,53,57,62] },
+        { root:43, arp:[55,59,62,67] }, { root:45, arp:[57,60,64,67] },
+        { root:38, arp:[50,53,57,62] }, { root:41, arp:[53,57,60,65] },
+        { root:43, arp:[55,59,62,67] }, { root:40, arp:[52,56,59,64] },
+        { root:45, arp:[57,60,64,67] }, { root:41, arp:[53,57,60,65] },
+        { root:48, arp:[55,60,64,67] }, { root:43, arp:[55,59,62,67] },
+        { root:45, arp:[57,60,64,67] }, { root:40, arp:[52,56,59,64] },
+        { root:41, arp:[53,57,60,65] }, { root:43, arp:[55,59,62,67] },
+      ],
+      melody: [
+        69,-1,72,-1,76,-1,72,69,  77,-1,76,-1,74,-1,72,71,
+        72,-1,76,-1,79,-1,76,72,  71,-1,67,-1,71,-1,72,71,
+        69,72,76,-1,79,-1,76,72,  77,-1,76,-1,74,-1,72,71,
+        71,72,74,-1,76,-1,74,72,  72,-1,74,-1,76,74,72,71,
+        76,-1,79,-1,81,-1,79,76,  76,79,81,-1,84,-1,81,79,
+        77,-1,81,-1,84,-1,81,79,  79,-1,83,-1,86,-1,83,81,
+        81,-1,79,-1,76,-1,79,81,  81,79,77,-1,74,-1,77,79,
+        77,-1,79,-1,81,-1,79,77,  76,75,73,72,71,72,73,76,
+        74,-1,72,-1,69,-1,72,74,  74,72,69,-1,67,-1,69,72,
+        71,-1,74,-1,76,-1,74,71,  69,-1,72,-1,74,-1,72,69,
+        74,-1,77,-1,79,-1,77,74,  72,-1,76,-1,79,-1,76,72,
+        71,-1,74,-1,79,-1,74,71,  76,74,72,71,69,-1,71,72,
+        76,79,81,84,81,79,76,-1,  77,81,84,-1,81,79,77,-1,
+        84,-1,81,-1,79,-1,76,72,  83,-1,79,-1,76,-1,79,83,
+        81,79,76,74,72,-1,76,79,  76,75,73,71,-1,71,73,76,
+        77,79,81,-1,84,81,79,77,  79,81,83,86,83,81,79,76,
+      ],
+    },
+
+    // ── BOSS FIGHT — ominous, fast, heavy industrial stomp
+    boss: {
+      bpm: 155, steps: 64,
+      bars: [
+        { root:33, arp:[45,48,52,57] }, // Am low
+        { root:33, arp:[45,48,52,57] },
+        { root:28, arp:[40,43,47,52] }, // E low
+        { root:33, arp:[45,48,52,57] },
+        { root:33, arp:[45,48,52,57] },
+        { root:31, arp:[43,46,50,55] }, // G low
+        { root:28, arp:[40,43,47,52] }, // E low
+        { root:28, arp:[40,43,47,52] }, // E hold — tension
+      ],
+      melody: [
+        57,-1,57,-1,60,-1,57,-1,  // bar 0 — heavy, sparse
+        -1,-1,64,-1,62,-1,60,-1,  // bar 1
+        59,-1,59,-1,56,-1,59,-1,  // bar 2 E — ominous shift
+        -1,-1,57,-1,-1,-1,55,-1,  // bar 3
+        57,60,57,-1,64,-1,62,-1,  // bar 4 — picking up
+        60,-1,59,-1,57,-1,55,-1,  // bar 5 G
+        56,55,54,52,51,52,54,56,  // bar 6 E — chromatic crawl
+        57,-1,-1,-1,56,-1,-1,-1,  // bar 7 — suspense hold
+      ],
+    },
+
+    // ── LEVEL UP — triumphant, punchy, short fanfare loop
+    levelup: {
+      bpm: 140, steps: 32,
+      bars: [
+        { root:48, arp:[60,64,67,72] }, // C major!
+        { root:53, arp:[65,69,72,77] }, // F major
+        { root:55, arp:[67,71,74,79] }, // G major
+        { root:48, arp:[60,64,67,72] }, // C resolve
+      ],
+      melody: [
+        72,-1,76,-1,79,-1,84,-1,  // bar 0 C — ascending triumph
+        77,-1,81,-1,84,-1,81,79,  // bar 1 F
+        79,-1,83,-1,86,-1,83,81,  // bar 2 G — high energy
+        84,83,81,79,76,-1,72,-1,  // bar 3 C — descend to resolve
+      ],
+    },
+
+    // ── GAME OVER — slow, mournful, dramatic minor descent
+    dead: {
+      bpm: 60, steps: 32,
+      bars: [
+        { root:45, arp:[57,60,64,67] }, // Am
+        { root:40, arp:[52,56,59,64] }, // E
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:43, arp:[55,59,62,67] }, // G
+      ],
+      melody: [
+        81,-1,-1,-1,79,-1,-1,-1,  // bar 0 — slow fall
+        76,-1,-1,-1,74,-1,-1,-1,  // bar 1
+        72,-1,-1,-1,71,-1,-1,-1,  // bar 2 — deeper sadness
+        69,-1,-1,-1,-1,-1,-1,-1,  // bar 3 — fade to nothing
+      ],
+    },
+
+    // ── VICTORY — euphoric, major key, celebratory sprint
+    win: {
+      bpm: 148, steps: 64,
+      bars: [
+        { root:48, arp:[60,64,67,72] }, // C
+        { root:53, arp:[65,69,72,77] }, // F
+        { root:55, arp:[67,71,74,79] }, // G
+        { root:48, arp:[60,64,67,72] }, // C
+        { root:53, arp:[65,69,72,77] }, // F
+        { root:50, arp:[62,65,69,74] }, // D minor (bittersweet dip)
+        { root:55, arp:[67,71,74,79] }, // G
+        { root:48, arp:[60,64,67,72] }, // C big finish
+      ],
+      melody: [
+        72,76,79,-1,84,-1,79,76,  // bar 0 — joyful burst
+        77,-1,81,-1,84,-1,81,77,  // bar 1 F
+        79,83,86,-1,83,-1,79,-1,  // bar 2 G — high!
+        84,-1,81,-1,79,-1,76,72,  // bar 3 C resolve
+        77,81,84,-1,86,-1,84,81,  // bar 4 F — even higher
+        74,-1,77,-1,81,-1,79,77,  // bar 5 Dm — bittersweet
+        79,83,86,89,86,83,79,-1,  // bar 6 G — huge ascending run
+        84,83,81,79,76,72,67,60,  // bar 7 C — grand descent finale
+      ],
+    },
+
+    // ── UPGRADE LAB — chill, mysterious, slow groove with jazzy feel
+    lab: {
+      bpm: 88, steps: 64,
+      bars: [
+        { root:45, arp:[57,60,64,69] }, // Am7
+        { root:38, arp:[50,53,57,62] }, // Dm
+        { root:43, arp:[55,59,62,67] }, // G
+        { root:48, arp:[60,64,67,71] }, // Cmaj7
+        { root:45, arp:[57,60,64,69] }, // Am7
+        { root:41, arp:[53,57,60,65] }, // F
+        { root:40, arp:[52,56,59,64] }, // E
+        { root:45, arp:[57,60,64,67] }, // Am resolve
+      ],
+      melody: [
+        69,-1,72,-1,76,-1,69,-1,  // bar 0 — laid back, spacious
+        -1,-1,74,-1,72,-1,69,-1,  // bar 1 Dm
+        71,-1,-1,-1,74,-1,72,-1,  // bar 2 G
+        72,-1,76,-1,79,-1,-1,-1,  // bar 3 Cmaj7
+        81,-1,79,-1,76,-1,72,-1,  // bar 4 — melodic phrase
+        77,-1,-1,-1,76,-1,74,-1,  // bar 5 F
+        76,75,73,71,-1,-1,-1,-1,  // bar 6 E — slow descend
+        69,-1,-1,-1,72,-1,76,-1,  // bar 7 — dreamy loop back
+      ],
+    },
+
+    // ── DANGER — frantic, very fast, urgent (low HP / late wave)
+    danger: {
+      bpm: 190, steps: 32,
+      bars: [
+        { root:33, arp:[45,48,52,57] }, // Am low
+        { root:28, arp:[40,43,47,52] }, // E low
+        { root:35, arp:[47,50,54,59] }, // B dim (dissonant!)
+        { root:33, arp:[45,48,52,57] }, // Am
+      ],
+      melody: [
+        57,60,57,62,60,57,55,57,  // bar 0 — rapid fire
+        56,55,54,52,56,52,54,56,  // bar 1 — chromatic panic
+        59,57,55,54,52,54,55,57,  // bar 2 dim — dissonant tension
+        57,60,62,57,60,62,64,62,  // bar 3 — frantic climb
+      ],
+    },
+
+  }; // end TRACKS
+
+  /* ---- SHARED SYNTH ENGINE ---- */
   function ensure() {
     const ctx = Sfx.getCtx();
     if (!gain) {
@@ -369,69 +488,177 @@ const Music = (() => {
     s.start(t); s.stop(t + dur + 0.02);
   }
 
-  function kick(ctx, t) {
+  function kick(ctx, t, freq = 160, decay = 0.12, vol = 0.55) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine';
-    o.frequency.setValueAtTime(160, t);
-    o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
-    g.gain.setValueAtTime(0.55, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(35, t + decay);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + decay + 0.04);
     o.connect(g); g.connect(gain);
-    o.start(t); o.stop(t + 0.18);
+    o.start(t); o.stop(t + decay + 0.06);
   }
 
-  function playStep(ctx, t, s) {
-    const bar = Math.floor(s / 8) % 32, sub = s % 8;
-    const B = bars[bar];
-
-    // disco bass — root on beats, octave-jump on the off-beat 3 & 7 (Chic-style)
+  // Per-track step renderers — each has its own groove personality
+  function stepGame(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
     if (sub !== 1 && sub !== 5) {
-      const bassNote = (sub === 3 || sub === 7) ? B.root + 12 : (sub === 4 ? B.root + 7 : B.root);
-      tone(ctx, mtof(bassNote - 12), t, SPB * 0.62, 'sawtooth', 0.28);
+      const bn = (sub === 3 || sub === 7) ? B.root + 12 : (sub === 4 ? B.root + 7 : B.root);
+      tone(ctx, mtof(bn - 12), t, SPB * 0.62, 'sawtooth', 0.28);
     }
-
-    // SID sparkle arpeggio — 3 rapid chord tones per step
-    for (let i = 0; i < 3; i++) {
-      tone(ctx, mtof(B.arp[i % 3] + 12), t + i * (SPB / 3.3), SPB / 3.6, 'square', 0.018);
-    }
-
-    // off-beat chord stabs (disco "chuh-chuh") on the & of 2 and & of 4
+    for (let i = 0; i < 3; i++) tone(ctx, mtof(B.arp[i%3]+12), t+i*(SPB/3.3), SPB/3.6, 'square', 0.018);
     if (sub === 3 || sub === 7) {
-      tone(ctx, mtof(B.arp[0] + 12), t, SPB * 0.22, 'sawtooth', 0.055);
-      tone(ctx, mtof(B.arp[2] + 12), t, SPB * 0.22, 'sawtooth', 0.040);
+      tone(ctx, mtof(B.arp[0]+12), t, SPB*0.22, 'sawtooth', 0.055);
+      tone(ctx, mtof(B.arp[2]+12), t, SPB*0.22, 'sawtooth', 0.040);
     }
-
-    // square-wave lead melody
-    const mel = melody[s % 256];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.78, 'square', 0.065);
-
-    // bar downbeat bell accent
-    if (sub === 0) tone(ctx, mtof(B.arp[1] + 24), t, SPB * 1.6, 'triangle', 0.042);
-
-    // FOUR-ON-THE-FLOOR kick (every beat = pure disco)
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.78, 'square', 0.065);
+    if (sub === 0) tone(ctx, mtof(B.arp[1]+24), t, SPB*1.6, 'triangle', 0.042);
     if (sub % 2 === 0) kick(ctx, t);
-
-    // snare on beats 2 and 4 (with the kick — classic disco crack)
     if (sub === 2 || sub === 6) noise(ctx, t, 0.11, 0.24, 1100);
-
-    // open hi-hat on off-beats (longer, more airy than C64 hats)
     if (sub % 2 === 1) noise(ctx, t, 0.06, 0.07, 5000);
   }
+
+  function stepMenu(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // slow sweeping pads — long triangle chords, gentle bass, no drums
+    if (sub === 0) {
+      tone(ctx, mtof(B.root - 12), t, SPB*7, 'triangle', 0.22);        // bass
+      tone(ctx, mtof(B.arp[0]), t, SPB*7, 'triangle', 0.10);           // pad low
+      tone(ctx, mtof(B.arp[2]), t, SPB*7, 'triangle', 0.08);           // pad mid
+      tone(ctx, mtof(B.arp[3]+12), t, SPB*7, 'sine', 0.05);            // shimmer
+    }
+    // gentle arp sparkle on odd steps
+    if (sub % 2 === 1) tone(ctx, mtof(B.arp[sub%4]+24), t, SPB*0.9, 'sine', 0.030);
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*1.8, 'triangle', 0.055);
+    // soft brush hi-hat only
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.08, 0.04, 4000);
+  }
+
+  function stepBoss(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // heavy sawtooth bass — two octave stomp
+    tone(ctx, mtof(B.root - 24), t, SPB*0.55, 'sawtooth', 0.32);
+    if (sub === 2 || sub === 5) tone(ctx, mtof(B.root - 12), t, SPB*0.4, 'sawtooth', 0.18);
+    // dissonant SID arp — faster, more chaotic
+    for (let i = 0; i < 4; i++) tone(ctx, mtof(B.arp[i%4]+0), t+i*(SPB/4.2), SPB/4.5, 'sawtooth', 0.022);
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.70, 'square', 0.062);
+    // thundering kick on every beat + extra on 3
+    if (sub % 2 === 0) kick(ctx, t, 200, 0.16, 0.62);
+    if (sub === 3) kick(ctx, t, 120, 0.10, 0.38);
+    // hard snare + clap layer
+    if (sub === 2 || sub === 6) { noise(ctx, t, 0.08, 0.30, 900); noise(ctx, t, 0.05, 0.18, 3000); }
+    if (sub % 2 === 1) noise(ctx, t, 0.02, 0.05, 8000);
+  }
+
+  function stepLevelup(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // triumphant major — bright square bass + punchy kick
+    tone(ctx, mtof(B.root - 12), t, SPB*0.58, 'square', 0.24);
+    for (let i = 0; i < 3; i++) tone(ctx, mtof(B.arp[i%3]+12), t+i*(SPB/3.1), SPB/3.4, 'square', 0.025);
+    if (sub === 0) { tone(ctx, mtof(B.arp[2]+24), t, SPB*3, 'triangle', 0.07); }
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.75, 'square', 0.072);
+    if (sub === 0 || sub === 4) kick(ctx, t, 140, 0.10);
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.08, 0.20, 1400);
+    if (sub % 2 === 1) noise(ctx, t, 0.03, 0.06, 6500);
+  }
+
+  function stepDead(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // mournful — slow pads, no drums, descending feel
+    if (sub === 0) {
+      tone(ctx, mtof(B.root - 12), t, SPB*7, 'sine', 0.18);
+      tone(ctx, mtof(B.arp[0]), t, SPB*7, 'triangle', 0.09);
+      tone(ctx, mtof(B.arp[1]), t, SPB*7, 'triangle', 0.06);
+    }
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*2.5, 'sine', 0.048);
+    // very occasional soft low tom
+    if (sub === 4) noise(ctx, t, 0.14, 0.06, 200);
+  }
+
+  function stepWin(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // euphoric major — bright, bouncy, celebratory
+    tone(ctx, mtof(B.root - 12), t, SPB*0.58, 'sawtooth', 0.24);
+    for (let i = 0; i < 3; i++) tone(ctx, mtof(B.arp[i%3]+12), t+i*(SPB/3.0), SPB/3.3, 'square', 0.022);
+    if (sub === 1 || sub === 5) {
+      tone(ctx, mtof(B.arp[0]+12), t, SPB*0.2, 'sawtooth', 0.05);
+      tone(ctx, mtof(B.arp[2]+12), t, SPB*0.2, 'sawtooth', 0.04);
+    }
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.72, 'square', 0.070);
+    if (sub === 0) tone(ctx, mtof(B.arp[1]+24), t, SPB*1.5, 'triangle', 0.050);
+    if (sub % 2 === 0) kick(ctx, t, 150, 0.11);
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.09, 0.22, 1200);
+    if (sub % 2 === 1) noise(ctx, t, 0.05, 0.07, 5500);
+  }
+
+  function stepLab(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // jazzy chill — sine pads, light bass, brushed hi-hat, no loud kicks
+    if (sub === 0 || sub === 4) tone(ctx, mtof(B.root - 12), t, SPB*1.8, 'sine', 0.20);
+    if (sub === 2) tone(ctx, mtof(B.root - 5), t, SPB*0.9, 'sine', 0.12);
+    tone(ctx, mtof(B.arp[sub%4]+12), t, SPB*1.1, 'sine', 0.040);
+    tone(ctx, mtof(B.arp[(sub+2)%4]+24), t, SPB*0.8, 'triangle', 0.022);
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*1.4, 'triangle', 0.050);
+    if (sub === 0) kick(ctx, t, 100, 0.18, 0.28);
+    if (sub === 4) kick(ctx, t, 80, 0.14, 0.18);
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.10, 0.08, 2000);
+    if (sub % 2 === 1) noise(ctx, t, 0.04, 0.03, 5000);
+  }
+
+  function stepDanger(ctx, t, s, T, SPB) {
+    const bar = Math.floor(s / 8) % T.bars.length, sub = s % 8;
+    const B = T.bars[bar];
+    // frantic — every step is dense, dissonant, no rests
+    tone(ctx, mtof(B.root - 24), t, SPB*0.45, 'sawtooth', 0.30);
+    tone(ctx, mtof(B.root - 12), t, SPB*0.45, 'sawtooth', 0.16);
+    for (let i = 0; i < 4; i++) tone(ctx, mtof(B.arp[i%4]+0), t+i*(SPB/4.1), SPB/4.4, 'square', 0.020);
+    const mel = T.melody[s % T.steps];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB*0.55, 'square', 0.070);
+    // double kick on EVERY step
+    kick(ctx, t, 180, 0.08, 0.50);
+    if (sub % 2 === 0) kick(ctx, t, 140, 0.12, 0.32);
+    if (sub === 1 || sub === 3 || sub === 5 || sub === 7) noise(ctx, t, 0.03, 0.10, 1500);
+    noise(ctx, t, 0.02, 0.04, 7500);
+  }
+
+  const RENDERERS = { game:stepGame, menu:stepMenu, boss:stepBoss, levelup:stepLevelup,
+                      dead:stepDead, win:stepWin, lab:stepLab, danger:stepDanger };
 
   function schedule() {
     if (!playing) return;
     const ctx = ensure();
+    const T = TRACKS[currentTrack];
+    const SPB = 60 / T.bpm / 2;
+    const render = RENDERERS[currentTrack] || stepGame;
     while (nextT < ctx.currentTime + 0.35) {
-      playStep(ctx, nextT, step);
-      step = (step + 1) % 256;  // 32-bar loop
+      render(ctx, nextT, step, T, SPB);
+      step = (step + 1) % T.steps;
       nextT += SPB;
     }
   }
 
   return {
-    start() {
+    start() { this.play('game'); },
+    play(id) {
       const ctx = ensure();
-      if (playing) return;
-      playing = true; step = 0; nextT = ctx.currentTime + 0.1;
+      playing = false;
+      if (timer) { clearInterval(timer); timer = null; }
+      currentTrack = TRACKS[id] ? id : 'game';
+      step = 0; nextT = ctx.currentTime + 0.05;
+      playing = true;
       timer = setInterval(schedule, 120);
       schedule();
     },
@@ -1439,7 +1666,7 @@ function spawnEnemy(type, posOverride) {
   e.poolIdx = pool.list.length;
   pool.list.push(e);
   enemies.push(e);
-  if (def.boss) { G.boss = e; Sfx.bossroar(); document.getElementById('bossWrap').style.display='block'; }
+  if (def.boss) { G.boss = e; Sfx.bossroar(); document.getElementById('bossWrap').style.display='block'; Music.play('boss'); }
   return e;
 }
 
@@ -1468,6 +1695,7 @@ function killEnemy(e, idx) {
     G.boss = enemies.find(x => x.def.boss) || null;
     if (G.boss) document.getElementById('bossName').textContent = G.boss.bossName || 'BOSS';
     document.getElementById('bossWrap').style.display = G.boss ? 'block' : 'none';
+    if (!G.boss) Music.play('game'); // resume gameplay music when last boss dies
   } else if (e.def.elite) {
     for (let i = 0; i < 4; i++) dropGem(p, 5, true);
     dropGold(p);
@@ -2075,6 +2303,7 @@ function rollCards() {
 
 function showLevelup() {
   G.state = 'levelup';
+  Music.play('levelup');
   for (const s of dmgPool) { s.life = 0; s.el.style.display = 'none'; } // don't leave numbers frozen over the menu
   document.getElementById('levelup').style.display = 'flex';
   document.getElementById('lvluptitle').textContent = G.pendingLevelups > 1 ? `LEVEL UP! (x${G.pendingLevelups})` : 'LEVEL UP!';
@@ -2104,7 +2333,7 @@ function pickCard() {
   refreshWeaponTray();
   if (G.pendingLevelups > 0 && G.state === 'levelup') { showLevelup(); return; }
   document.getElementById('levelup').style.display = 'none';
-  if (G.state === 'levelup') G.state = 'play'; // never un-pause a dead/won run
+  if (G.state === 'levelup') { G.state = 'play'; Music.play(G.boss ? 'boss' : 'game'); }
 }
 function refreshWeaponTray() {
   const tray = document.getElementById('weaponTray');
@@ -2142,7 +2371,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyM') Music.setMuted(Sfx.toggleMute());
   if ((e.code === 'KeyP' || e.code === 'Escape')) {
     if (G.state === 'play') { G.state = 'pause'; Music.stop(); document.getElementById('pauseScr').style.display = 'flex'; }
-    else if (G.state === 'pause') { G.state = 'play'; Music.start(); document.getElementById('pauseScr').style.display = 'none'; }
+    else if (G.state === 'pause') { G.state = 'play'; Music.play(G.boss ? 'boss' : 'game'); document.getElementById('pauseScr').style.display = 'none'; }
   }
 });
 addEventListener('keyup', e => keys[e.code] = false);
@@ -2415,7 +2644,7 @@ function resetGame() {
 
 function startGame() {
   Sfx.ensure();
-  Music.start();
+  Music.play('game');
   resetGame();
   document.getElementById('menu').style.display = 'none';
   document.getElementById('deadScr').style.display = 'none';
@@ -2437,7 +2666,7 @@ function endStatsHTML() {
 
 function gameOver(won) {
   G.state = won ? 'win' : 'dead';
-  Music.stop();
+  Music.play(won ? 'win' : 'dead');
   document.getElementById('levelup').style.display = 'none'; // clear a same-frame card screen
   if (!G.banked) { // run gold becomes permanent coins
     G.banked = true;
@@ -2479,6 +2708,10 @@ function gameOver(won) {
   document.getElementById('startBtn').onclick = startGame;
   document.getElementById('retryBtn').onclick = startGame;
   document.getElementById('winBtn').onclick = startGame;
+  // play menu music on first user interaction (browsers require a gesture before AudioContext)
+  document.getElementById('menu').addEventListener('pointerdown', () => {
+    Sfx.ensure(); Music.play('menu');
+  }, { once: true });
 }
 
 /* ============================================================
@@ -2521,6 +2754,7 @@ function openShop(from) {
   renderShop();
   document.getElementById('shopScr').style.display = 'flex';
   Sfx.pick();
+  Music.play('lab');
 }
 document.getElementById('shopBtn').onclick = () => openShop('menu');
 document.getElementById('deadShopBtn').onclick = () => openShop('deadScr');
@@ -2529,6 +2763,7 @@ document.getElementById('shopBack').onclick = () => {
   document.getElementById('shopScr').style.display = 'none';
   document.getElementById(shopReturn).style.display = 'flex';
   Sfx.pick();
+  Music.play(shopReturn === 'menu' ? 'menu' : (shopReturn === 'winScr' ? 'win' : 'dead'));
 };
 document.getElementById('resetSave').onclick = () => {
   if (!confirm('Reset ALL progress (coins + upgrades)?')) return;
