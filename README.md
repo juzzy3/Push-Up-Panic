@@ -1,6 +1,6 @@
-# 🔨 CUBE BASHER
+# 💪 PUSH UP PANIC
 
-*They're evil cubes. You have a hammer.*
+*They're evil cubes. You have push ups.*
 
 **Cube Basher** is a fast, colorful 3D survivors-like (think *Vampire Survivors* meets low-poly 3D) that runs entirely in your browser. Survive 30 minutes against an ever-growing horde of menacing cubes, level up auto-firing weapons, climb cliffs, smash pots for food, and take down five towering bosses — then bank your gold to permanently upgrade your character between runs.
 
