@@ -789,14 +789,48 @@ function makePlayerMesh(ch) {
     const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), eyeMat); e1.position.set(sx, 0.02, 0.275); head.add(e1);
     const p1 = new THREE.Mesh(new THREE.SphereGeometry(0.042, 6, 6), pupMat); p1.position.set(sx, 0.02, 0.345); head.add(p1);
   }
-new THREE.TextureLoader().load('assets/faces/normal-justin.png', tex => {
+  // low-poly 3D face, arcade hero style
+  const browMat = new THREE.MeshStandardMaterial({ color: 0x2a1a08, roughness: 0.8, flatShading: true });
+  const stubbleMat = new THREE.MeshStandardMaterial({ color: 0xc4855a, roughness: 1.0, flatShading: true });
 
-    const faceSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-    faceSprite.scale.set(0.55, 0.55, 1);
-    faceSprite.position.set(0, 0.02, 0.35);
-    faceSprite.name = 'normalJustinFaceSprite';
-    head.add(faceSprite);
-  }, undefined, () => {});
+  // nose, small box protruding from face centre
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.065, 0.075), mat(skin));
+  nose.position.set(0, -0.025, 0.345);
+  head.add(nose);
+
+  // eyebrows, angled inward for determined expression
+  for (const [sx, rz] of [[-0.13, 0.22], [0.13, -0.22]]) {
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.03, 0.016), browMat);
+    brow.position.set(sx, 0.115, 0.285);
+    brow.rotation.z = rz;
+    head.add(brow);
+  }
+
+  // mouth, centre bar plus two upward angled corners
+  const mouthBar = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.022, 0.013), browMat);
+  mouthBar.position.set(0, -0.115, 0.292);
+  head.add(mouthBar);
+
+  for (const [sx, rz] of [[-0.052, 0.45], [0.052, -0.45]]) {
+    const mc = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.018, 0.013), browMat);
+    mc.position.set(sx, -0.105, 0.291);
+    mc.rotation.z = rz;
+    head.add(mc);
+  }
+
+  // stubble shadow, lower-face sphere cap slightly darker than skin
+  const stubble = new THREE.Mesh(
+    new THREE.SphereGeometry(0.316, 10, 5, 0, Math.PI * 2, Math.PI * 0.7, Math.PI * 0.3),
+    stubbleMat
+  );
+  stubble.position.y = -0.015;
+  head.add(stubble);
+
+  // hair fringe, flat strip across forehead, tilted to follow skull curve
+  const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.07, 0.1), mat(ch.hair));
+  fringe.position.set(0, 0.27, 0.17);
+  fringe.rotation.x = -0.35;
+  head.add(fringe);
   
   // arms — pivot at shoulder
   const armGeo = new THREE.CapsuleGeometry(0.105, 0.34, 4, 7);
