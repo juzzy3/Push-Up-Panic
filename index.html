@@ -253,30 +253,86 @@ const Sfx = (() => {
 ============================================================ */
 const Music = (() => {
   let gain = null, playing = false, timer = null, step = 0, nextT = 0, noiseBuf = null, muted = false;
-  const BPM = 170, SPB = 60/BPM/2; // 8th-note grid — high energy C64 workout tempo
+  const BPM = 126, SPB = 60/BPM/2; // 8th-note grid — classic disco/dance tempo
 
-  // 8-bar progression: Am Am F G Am E F G (minor drive with tension on bar 5)
+  // 32-bar journey: Intro → Verse → Chorus → Funk Break → Big Build → Climax
   const bars = [
-    { root:45, arp:[57,60,64,67] },  // Am
-    { root:45, arp:[57,60,64,67] },  // Am
-    { root:41, arp:[53,57,60,65] },  // F
-    { root:43, arp:[55,59,62,67] },  // G
-    { root:45, arp:[57,60,64,67] },  // Am
-    { root:40, arp:[52,56,59,64] },  // E  (tension build)
-    { root:41, arp:[53,57,60,65] },  // F
-    { root:43, arp:[55,59,62,67] },  // G  (big resolve before loop)
+    // Section A — Intro groove (bars 0-7): Am F C G × 2
+    { root:45, arp:[57,60,64,67] },  // 0  Am
+    { root:41, arp:[53,57,60,65] },  // 1  F
+    { root:48, arp:[55,60,64,67] },  // 2  C
+    { root:43, arp:[55,59,62,67] },  // 3  G
+    { root:45, arp:[57,60,64,67] },  // 4  Am
+    { root:41, arp:[53,57,60,65] },  // 5  F
+    { root:43, arp:[55,59,62,67] },  // 6  G
+    { root:43, arp:[55,59,62,67] },  // 7  G hold
+    // Section B — Chorus (bars 8-15): bigger, higher energy
+    { root:45, arp:[57,60,64,67] },  // 8  Am
+    { root:45, arp:[57,60,64,67] },  // 9  Am
+    { root:41, arp:[53,57,60,65] },  // 10 F
+    { root:43, arp:[55,59,62,67] },  // 11 G
+    { root:45, arp:[57,60,64,67] },  // 12 Am
+    { root:38, arp:[50,53,57,62] },  // 13 Dm
+    { root:41, arp:[53,57,60,65] },  // 14 F
+    { root:40, arp:[52,56,59,64] },  // 15 E  (tension)
+    // Section C — Funk break (bars 16-23): Dm groove, lower register
+    { root:38, arp:[50,53,57,62] },  // 16 Dm
+    { root:38, arp:[50,53,57,62] },  // 17 Dm
+    { root:43, arp:[55,59,62,67] },  // 18 G
+    { root:45, arp:[57,60,64,67] },  // 19 Am
+    { root:38, arp:[50,53,57,62] },  // 20 Dm
+    { root:41, arp:[53,57,60,65] },  // 21 F
+    { root:43, arp:[55,59,62,67] },  // 22 G
+    { root:40, arp:[52,56,59,64] },  // 23 E
+    // Section D — Final build & climax (bars 24-31): runs, high notes, big finish
+    { root:45, arp:[57,60,64,67] },  // 24 Am
+    { root:41, arp:[53,57,60,65] },  // 25 F
+    { root:48, arp:[55,60,64,67] },  // 26 C
+    { root:43, arp:[55,59,62,67] },  // 27 G
+    { root:45, arp:[57,60,64,67] },  // 28 Am
+    { root:40, arp:[52,56,59,64] },  // 29 E
+    { root:41, arp:[53,57,60,65] },  // 30 F
+    { root:43, arp:[55,59,62,67] },  // 31 G  → loops back to Am
   ];
 
-  // Lead melody — 64 steps (8 bars × 8 eighth-notes), -1 = rest
+  // 256-step lead melody (32 bars × 8 eighth-notes), -1 = rest
   const melody = [
-    76,-1,81,-1,79,-1,76,74,   // bar 0 Am  — E A G E D
-    72,-1,76,-1,79,81,79,76,   // bar 1 Am  — C E G A G E
-    77,-1,81,-1,84,-1,81,79,   // bar 2 F   — F A C A G
-    79,-1,83,-1,86,-1,83,81,   // bar 3 G   — G B D B A
-    76,76,81,-1,79,-1,77,76,   // bar 4 Am  — punchy repeat
-    76,75,73,71,73,-1,76,-1,   // bar 5 E   — descending tension
-    77,-1,81,79,77,-1,79,77,   // bar 6 F   — flowing resolve
-    79,81,83,-1,81,79,77,76,   // bar 7 G   — rising finish back to Am
+    // Section A — bouncy intro, fun singalong feel
+    69,-1,72,-1,76,-1,72,69,   // bar 0  Am
+    69,-1,65,-1,67,-1,65,64,   // bar 1  F
+    72,-1,76,-1,79,-1,76,72,   // bar 2  C
+    71,-1,67,-1,71,-1,72,71,   // bar 3  G
+    69,72,76,-1,79,-1,76,72,   // bar 4  Am  (more notes, building)
+    77,-1,76,-1,74,-1,72,71,   // bar 5  F
+    71,72,74,-1,76,-1,74,72,   // bar 6  G
+    72,-1,74,-1,76,74,72,71,   // bar 7  G hold
+    // Section B — chorus kicks up an octave, high energy
+    76,-1,79,-1,81,-1,79,76,   // bar 8  Am
+    76,79,81,-1,84,-1,81,79,   // bar 9  Am  (ascending run)
+    77,-1,81,-1,84,-1,81,79,   // bar 10 F
+    79,-1,83,-1,86,-1,83,81,   // bar 11 G   (high notes!)
+    81,-1,79,-1,76,-1,79,81,   // bar 12 Am
+    81,79,77,-1,74,-1,77,79,   // bar 13 Dm  (descend into Dm)
+    77,-1,79,-1,81,-1,79,77,   // bar 14 F
+    76,75,73,72,71,72,73,76,   // bar 15 E   (chromatic tension run)
+    // Section C — funk break, lower groove, laid back
+    74,-1,72,-1,69,-1,72,74,   // bar 16 Dm
+    74,72,69,-1,67,-1,69,72,   // bar 17 Dm  (funky dip)
+    71,-1,74,-1,76,-1,74,71,   // bar 18 G
+    69,-1,72,-1,74,-1,72,69,   // bar 19 Am
+    74,-1,77,-1,79,-1,77,74,   // bar 20 Dm  (rising funk line)
+    72,-1,76,-1,79,-1,76,72,   // bar 21 F
+    71,-1,74,-1,79,-1,74,71,   // bar 22 G
+    76,74,72,71,69,-1,71,72,   // bar 23 E   (chromatic fall, drama!)
+    // Section D — final build, ascending runs, maximum fun
+    76,79,81,84,81,79,76,-1,   // bar 24 Am  (full ascending run)
+    77,81,84,-1,81,79,77,-1,   // bar 25 F
+    84,-1,81,-1,79,-1,76,72,   // bar 26 C   (highest note! coming back down)
+    83,-1,79,-1,76,-1,79,83,   // bar 27 G
+    81,79,76,74,72,-1,76,79,   // bar 28 Am  (fast descend then climb)
+    76,75,73,71,-1,71,73,76,   // bar 29 E   (tension)
+    77,79,81,-1,84,81,79,77,   // bar 30 F   (triumphant climb)
+    79,81,83,86,83,81,79,76,   // bar 31 G   (big descending finale → loops to Am!)
   ];
 
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -316,38 +372,49 @@ const Music = (() => {
   function kick(ctx, t) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine';
-    o.frequency.setValueAtTime(180, t);
-    o.frequency.exponentialRampToValueAtTime(35, t + 0.10);
-    g.gain.setValueAtTime(0.58, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    o.frequency.setValueAtTime(160, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+    g.gain.setValueAtTime(0.55, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
     o.connect(g); g.connect(gain);
-    o.start(t); o.stop(t + 0.16);
+    o.start(t); o.stop(t + 0.18);
   }
 
   function playStep(ctx, t, s) {
-    const bar = Math.floor(s / 8) % 8, sub = s % 8;
+    const bar = Math.floor(s / 8) % 32, sub = s % 8;
     const B = bars[bar];
 
-    // sawtooth bass — gritty C64 drive, walking on beats 3+7
-    const bassNote = (sub === 2 || sub === 6) ? B.root + 7 : B.root;
-    tone(ctx, mtof(bassNote - 12), t, SPB * 0.72, 'sawtooth', 0.26);
+    // disco bass — root on beats, octave-jump on the off-beat 3 & 7 (Chic-style)
+    if (sub !== 1 && sub !== 5) {
+      const bassNote = (sub === 3 || sub === 7) ? B.root + 12 : (sub === 4 ? B.root + 7 : B.root);
+      tone(ctx, mtof(bassNote - 12), t, SPB * 0.62, 'sawtooth', 0.28);
+    }
 
-    // SID-chip fast arpeggio — 3 rapid notes fired within a single step
+    // SID sparkle arpeggio — 3 rapid chord tones per step
     for (let i = 0; i < 3; i++) {
-      tone(ctx, mtof(B.arp[i % 3] + 12), t + i * (SPB / 3.3), SPB / 3.6, 'square', 0.022);
+      tone(ctx, mtof(B.arp[i % 3] + 12), t + i * (SPB / 3.3), SPB / 3.6, 'square', 0.018);
+    }
+
+    // off-beat chord stabs (disco "chuh-chuh") on the & of 2 and & of 4
+    if (sub === 3 || sub === 7) {
+      tone(ctx, mtof(B.arp[0] + 12), t, SPB * 0.22, 'sawtooth', 0.055);
+      tone(ctx, mtof(B.arp[2] + 12), t, SPB * 0.22, 'sawtooth', 0.040);
     }
 
     // square-wave lead melody
-    const mel = melody[s % 64];
-    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.80, 'square', 0.068);
+    const mel = melody[s % 256];
+    if (mel > 0) tone(ctx, mtof(mel), t, SPB * 0.78, 'square', 0.065);
 
-    // high chord stab on bar downbeat (C64 power chord feel)
-    if (sub === 0) tone(ctx, mtof(B.arp[0] + 24), t, SPB * 1.8, 'triangle', 0.055);
+    // bar downbeat bell accent
+    if (sub === 0) tone(ctx, mtof(B.arp[1] + 24), t, SPB * 1.6, 'triangle', 0.042);
 
-    // drums — driving 4-on-the-floor + syncopated extra kick
-    if (sub === 0 || sub === 4) kick(ctx, t);
-    if (sub === 3) kick(ctx, t);                                   // syncopated kick
-    if (sub === 2 || sub === 6) noise(ctx, t, 0.09, 0.20, 1400);  // snare crack
-    if (sub % 2 === 1) noise(ctx, t, 0.025, 0.055, 7000);         // tight hi-hat
+    // FOUR-ON-THE-FLOOR kick (every beat = pure disco)
+    if (sub % 2 === 0) kick(ctx, t);
+
+    // snare on beats 2 and 4 (with the kick — classic disco crack)
+    if (sub === 2 || sub === 6) noise(ctx, t, 0.11, 0.24, 1100);
+
+    // open hi-hat on off-beats (longer, more airy than C64 hats)
+    if (sub % 2 === 1) noise(ctx, t, 0.06, 0.07, 5000);
   }
 
   function schedule() {
@@ -355,7 +422,7 @@ const Music = (() => {
     const ctx = ensure();
     while (nextT < ctx.currentTime + 0.35) {
       playStep(ctx, nextT, step);
-      step = (step + 1) % 64;  // 8-bar loop
+      step = (step + 1) % 256;  // 32-bar loop
       nextT += SPB;
     }
   }
