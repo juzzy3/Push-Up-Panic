@@ -789,47 +789,47 @@ function makePlayerMesh(ch) {
     const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), eyeMat); e1.position.set(sx, 0.02, 0.275); head.add(e1);
     const p1 = new THREE.Mesh(new THREE.SphereGeometry(0.042, 6, 6), pupMat); p1.position.set(sx, 0.02, 0.345); head.add(p1);
   }
-  // low-poly 3D face, arcade hero style
-  const browMat = new THREE.MeshStandardMaterial({ color: 0x2a1a08, roughness: 0.8, flatShading: true });
-  const stubbleMat = new THREE.MeshStandardMaterial({ color: 0xc4855a, roughness: 1.0, flatShading: true });
+    // low-poly 3D face, bold arcade hero test version
+  const browMat = new THREE.MeshStandardMaterial({ color: 0x140804, roughness: 0.8, flatShading: true });
+  const mouthMat = new THREE.MeshStandardMaterial({ color: 0x5a1c18, roughness: 0.8, flatShading: true });
+  const noseMat = new THREE.MeshStandardMaterial({ color: 0xe0a079, roughness: 0.9, flatShading: true });
+  const stubbleMat = new THREE.MeshStandardMaterial({ color: 0x7a4d3a, roughness: 1.0, flatShading: true });
 
-  // nose, small box protruding from face centre
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.065, 0.075), mat(skin));
-  nose.position.set(0, -0.025, 0.345);
+  // bigger nose, pushed clearly forward
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.09, 0.12), noseMat);
+  nose.position.set(0, -0.02, 0.405);
   head.add(nose);
 
-  // eyebrows, angled inward for determined expression
-  for (const [sx, rz] of [[-0.13, 0.22], [0.13, -0.22]]) {
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.03, 0.016), browMat);
-    brow.position.set(sx, 0.115, 0.285);
+  // heavy eyebrows, pushed forward and made darker
+  for (const [sx, rz] of [[-0.13, 0.25], [0.13, -0.25]]) {
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.045, 0.03), browMat);
+    brow.position.set(sx, 0.135, 0.39);
     brow.rotation.z = rz;
     head.add(brow);
   }
 
-  // mouth, centre bar plus two upward angled corners
-  const mouthBar = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.022, 0.013), browMat);
-  mouthBar.position.set(0, -0.115, 0.292);
+  // stronger smirk
+  const mouthBar = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.035, 0.025), mouthMat);
+  mouthBar.position.set(0.015, -0.155, 0.39);
+  mouthBar.rotation.z = -0.08;
   head.add(mouthBar);
 
-  for (const [sx, rz] of [[-0.052, 0.45], [0.052, -0.45]]) {
-    const mc = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.018, 0.013), browMat);
-    mc.position.set(sx, -0.105, 0.291);
+  for (const [sx, rz] of [[-0.085, 0.35], [0.105, -0.35]]) {
+    const mc = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.025, 0.025), mouthMat);
+    mc.position.set(sx, -0.145, 0.39);
     mc.rotation.z = rz;
     head.add(mc);
   }
 
-  // stubble shadow, lower-face sphere cap slightly darker than skin
-  const stubble = new THREE.Mesh(
-    new THREE.SphereGeometry(0.316, 10, 5, 0, Math.PI * 2, Math.PI * 0.7, Math.PI * 0.3),
-    stubbleMat
-  );
-  stubble.position.y = -0.015;
+  // visible stubble block, deliberately simple for readability
+  const stubble = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.13, 0.025), stubbleMat);
+  stubble.position.set(0, -0.22, 0.385);
   head.add(stubble);
 
-  // hair fringe, flat strip across forehead, tilted to follow skull curve
-  const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.07, 0.1), mat(ch.hair));
-  fringe.position.set(0, 0.27, 0.17);
-  fringe.rotation.x = -0.35;
+  // stronger hair fringe across forehead
+  const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.105, 0.12), mat(ch.hair));
+  fringe.position.set(0, 0.255, 0.29);
+  fringe.rotation.x = -0.25;
   head.add(fringe);
   
   // arms — pivot at shoulder
