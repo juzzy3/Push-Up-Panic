@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>PUSH UP PANIC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,6 +116,79 @@
   .buyBtn:hover{transform:scale(1.05)}
   .buyBtn:disabled{background:#3a3052;color:#776a99;box-shadow:none;cursor:default;transform:none}
   #resetSave{margin-top:10px;color:#5a4f77;font-size:12px;cursor:pointer;text-decoration:underline}
+
+
+  /* ---------- mobile / touch layout ---------- */
+  #touchControls{position:absolute;inset:0;display:none;pointer-events:none;z-index:18}
+  #stickZone{position:absolute;left:calc(18px + env(safe-area-inset-left));bottom:calc(24px + env(safe-area-inset-bottom));width:132px;height:132px;border-radius:50%;background:#0006;border:2px solid #ffffff24;backdrop-filter:blur(5px);pointer-events:auto;touch-action:none}
+  #stickKnob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:linear-gradient(180deg,#ffffffcc,#cfd8ffaa);border:2px solid #fff8;box-shadow:0 6px 18px #0008}
+  #touchButtons{position:absolute;right:calc(16px + env(safe-area-inset-right));bottom:calc(26px + env(safe-area-inset-bottom));display:grid;grid-template-columns:70px 70px;grid-template-rows:70px 70px;gap:12px;pointer-events:auto;touch-action:none}
+  .touchBtn{border:none;border-radius:22px;background:linear-gradient(180deg,#ffe06e,#f5a40b 70%,#d98a00);color:#3a2200;font-family:var(--display);font-size:15px;letter-spacing:1px;box-shadow:0 5px 0 #8a5400,0 12px 24px #0008;touch-action:none}
+  .touchBtn:active,.touchBtn.down{transform:translateY(4px);box-shadow:0 1px 0 #8a5400,0 6px 14px #0008}
+  #touchJump{grid-column:2;grid-row:1 / span 2;width:78px;height:152px;border-radius:28px;font-size:18px}
+  #touchSprint{grid-column:1;grid-row:2}
+  #touchTop{position:absolute;top:calc(22px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));display:none;gap:8px;pointer-events:auto}
+  .miniBtn{border:none;border-radius:10px;background:#0009;color:#fff;font-family:var(--display);font-size:13px;padding:9px 11px;border:1px solid #ffffff24;backdrop-filter:blur(5px)}
+
+  @media (max-width: 820px), (pointer: coarse) {
+    html,body{position:fixed;inset:0;overflow:hidden;touch-action:none}
+    #touchControls{display:block}
+    #touchTop{display:flex}
+    .title{font-size:clamp(44px,12vw,66px);letter-spacing:3px;text-align:center;line-height:.95;margin:0 12px 6px}
+    .subtitle{font-size:14px;margin-bottom:14px;text-align:center;padding:0 18px}
+    .screen{justify-content:flex-start;overflow-y:auto;padding:calc(22px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+    .charRow{display:grid;grid-template-columns:1fr;gap:10px;width:min(94vw,430px);margin-bottom:16px}
+    .charCard{width:100%;display:grid;grid-template-columns:58px 1fr;grid-template-rows:auto auto;column-gap:10px;text-align:left;padding:12px 14px;border-radius:14px}
+    .charCard:hover{transform:none}
+    .charEmoji{grid-row:1 / span 2;font-size:40px;margin:0;align-self:center;text-align:center}
+    .charName{font-size:20px;margin:0 0 3px}
+    .charDesc{font-size:12px;line-height:1.35}
+    .btnRow{flex-wrap:wrap;justify-content:center;gap:10px}
+    .bigBtn{font-size:22px;padding:13px 34px;border-radius:13px}
+    .bigBtn.secondary{font-size:18px;padding:12px 24px}
+    .controls{font-size:12px;line-height:1.45;margin-top:16px;padding:0 12px}
+    #menuCoins{margin-bottom:12px}
+    #timer{top:calc(24px + env(safe-area-inset-top));font-size:32px}
+    #stats{top:calc(64px + env(safe-area-inset-top));right:10px;font-size:13px;line-height:1.45}
+    #weaponTray{top:calc(98px + env(safe-area-inset-top));left:8px;max-width:42vw;gap:3px}
+    .wslot{font-size:11px;padding:3px 7px}
+    .ptray{max-width:42vw;gap:3px}
+    .pchip{font-size:12px;padding:2px 6px}
+    #hpWrap{left:50%;bottom:calc(166px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(62vw,250px)}
+    #hpOuter{height:20px;border-width:2px}
+    #hpText{font-size:12px;text-align:center}
+    #stamOuter{width:100%;height:10px}
+    #hint{display:none}
+    #combo{top:calc(104px + env(safe-area-inset-top));right:12px;font-size:26px}
+    #bossWrap{top:calc(70px + env(safe-area-inset-top));width:86vw}
+    #banner{font-size:clamp(30px,9vw,46px);letter-spacing:3px;white-space:normal;text-align:center;width:94vw}
+    #lvluptitle,#shopTitle{font-size:42px;text-align:center;margin-bottom:16px}
+    .cardRow{display:grid;grid-template-columns:1fr;gap:12px;width:min(94vw,430px)}
+    .upCard{width:100%;min-height:0;padding:14px 16px}
+    .upCard:hover{transform:none}
+    .upEmoji{font-size:38px;margin:4px 0 8px}
+    .upName{font-size:18px}
+    .upDesc{font-size:12px;line-height:1.45}
+    .endTitle{font-size:clamp(42px,11vw,58px);text-align:center;line-height:1.05}
+    .endStats{font-size:15px;line-height:1.65;margin-bottom:22px}
+    #shopGrid{grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:440px;margin-bottom:18px}
+    .metaCard{padding:10px 8px}
+    .metaCard .upEmoji{font-size:28px}
+    .metaCard .upName{font-size:14px}
+    .metaCard .mdesc{font-size:10.5px;min-height:44px}
+    .buyBtn{font-size:13px;padding:7px 10px}
+  }
+
+  @media (max-width: 420px) {
+    #stickZone{width:116px;height:116px;bottom:calc(18px + env(safe-area-inset-bottom))}
+    #stickKnob{width:52px;height:52px;margin:-26px 0 0 -26px}
+    #touchButtons{grid-template-columns:62px 70px;grid-template-rows:62px 62px;gap:10px;bottom:calc(20px + env(safe-area-inset-bottom))}
+    #touchJump{width:70px;height:134px}
+    .touchBtn{font-size:13px;border-radius:20px}
+    #hpWrap{bottom:calc(148px + env(safe-area-inset-bottom));width:58vw}
+    #shopGrid{grid-template-columns:1fr}
+  }
+
 </style>
 </head>
 <body>
@@ -134,7 +207,15 @@
     </div>
     <div id="combo"></div>
     <div id="banner"></div>
-    <div id="hint">WASD move &nbsp;·&nbsp; SHIFT sprint &nbsp;·&nbsp; SPACE jump &nbsp;·&nbsp; drag mouse = camera &nbsp;·&nbsp; scroll = zoom &nbsp;·&nbsp; P pause &nbsp;·&nbsp; M mute</div>
+    <div id="hint">Desktop controls: WASD move · SHIFT sprint · SPACE jump · drag mouse for camera · P pause · M mute</div>
+    <div id="touchTop"><button class="miniBtn" id="touchPause">PAUSE</button><button class="miniBtn" id="touchMute">MUTE</button></div>
+    <div id="touchControls">
+      <div id="stickZone" aria-label="Move"><div id="stickKnob"></div></div>
+      <div id="touchButtons">
+        <button class="touchBtn" id="touchSprint">RUN</button>
+        <button class="touchBtn" id="touchJump">JUMP</button>
+      </div>
+    </div>
   </div>
 
   <div class="screen" id="menu" style="display:flex">
@@ -146,7 +227,7 @@
       <button class="bigBtn" id="startBtn">PUSH!</button>
       <button class="bigBtn secondary" id="shopBtn">UPGRADES</button>
     </div>
-    <div class="controls">WASD — move · SHIFT — sprint · SPACE — jump over enemies & up ledges · drag mouse — orbit camera · scroll — zoom<br>Smash glowing pots for food · collect XP gems · survive 30 minutes · bash every cube</div>
+    <div class="controls">Desktop: WASD move · SHIFT sprint · SPACE jump · drag mouse to orbit camera<br>Mobile: left stick to move · RUN to sprint · JUMP over enemies and up ledges · drag the right side to look</div>
   </div>
 
   <div class="screen" id="levelup">
@@ -2509,6 +2590,77 @@ addEventListener('blur', endDrag);
 addEventListener('wheel', e => { camDist = THREE.MathUtils.clamp(camDist + e.deltaY * 0.02, 9.5, 24); }, { passive: true });
 renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
 
+/* ---------- mobile touch controls: left stick, jump, sprint, drag camera ---------- */
+const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+const touchMove = { x: 0, z: 0, sprint: false, jump: false };
+let stickPointer = null;
+
+function setBtnDown(el, down) { if (el) el.classList.toggle('down', down); }
+function togglePause() {
+  if (G.state === 'play') { G.state = 'pause'; Music.stop(); document.getElementById('pauseScr').style.display = 'flex'; }
+  else if (G.state === 'pause') { G.state = 'play'; Music.play(G.boss ? 'boss' : 'game'); document.getElementById('pauseScr').style.display = 'none'; }
+}
+function resetStick() {
+  touchMove.x = 0; touchMove.z = 0; stickPointer = null;
+  const knob = document.getElementById('stickKnob');
+  if (knob) knob.style.transform = 'translate(0px,0px)';
+}
+function updateStick(e) {
+  const zone = document.getElementById('stickZone');
+  const knob = document.getElementById('stickKnob');
+  if (!zone || !knob) return;
+  const r = zone.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const max = r.width * 0.34;
+  let dx = e.clientX - cx, dy = e.clientY - cy;
+  const len = Math.hypot(dx, dy);
+  if (len > max) { dx = dx / len * max; dy = dy / len * max; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`;
+  touchMove.x = Math.abs(dx) < 5 ? 0 : dx / max;
+  touchMove.z = Math.abs(dy) < 5 ? 0 : dy / max;
+}
+
+if (IS_TOUCH) {
+  document.body.addEventListener('touchmove', e => e.preventDefault(), { passive:false });
+  const stick = document.getElementById('stickZone');
+  stick?.addEventListener('pointerdown', e => { stickPointer = e.pointerId; stick.setPointerCapture(e.pointerId); updateStick(e); Sfx.ensure(); });
+  stick?.addEventListener('pointermove', e => { if (e.pointerId === stickPointer) updateStick(e); });
+  stick?.addEventListener('pointerup', resetStick);
+  stick?.addEventListener('pointercancel', resetStick);
+
+  const jumpBtn = document.getElementById('touchJump');
+  jumpBtn?.addEventListener('pointerdown', e => { e.preventDefault(); touchMove.jump = true; setBtnDown(jumpBtn, true); Sfx.ensure(); });
+  jumpBtn?.addEventListener('pointerup', () => { touchMove.jump = false; setBtnDown(jumpBtn, false); });
+  jumpBtn?.addEventListener('pointercancel', () => { touchMove.jump = false; setBtnDown(jumpBtn, false); });
+
+  const sprintBtn = document.getElementById('touchSprint');
+  sprintBtn?.addEventListener('pointerdown', e => { e.preventDefault(); touchMove.sprint = true; setBtnDown(sprintBtn, true); Sfx.ensure(); });
+  sprintBtn?.addEventListener('pointerup', () => { touchMove.sprint = false; setBtnDown(sprintBtn, false); });
+  sprintBtn?.addEventListener('pointercancel', () => { touchMove.sprint = false; setBtnDown(sprintBtn, false); });
+
+  document.getElementById('touchPause')?.addEventListener('click', togglePause);
+  document.getElementById('touchMute')?.addEventListener('click', () => Music.setMuted(Sfx.toggleMute()));
+
+  let camPointer = null, lastTX = 0, lastTY = 0;
+  renderer.domElement.addEventListener('pointerdown', e => {
+    if (e.target.closest?.('#touchControls,#touchTop,.screen')) return;
+    camPointer = e.pointerId; lastTX = e.clientX; lastTY = e.clientY;
+    renderer.domElement.setPointerCapture?.(e.pointerId);
+    Sfx.ensure();
+  });
+  renderer.domElement.addEventListener('pointermove', e => {
+    if (e.pointerId !== camPointer) return;
+    const dx = e.clientX - lastTX, dy = e.clientY - lastTY;
+    camYaw -= dx * 0.0065;
+    camPitch = THREE.MathUtils.clamp(camPitch + dy * 0.0048, 0.32, 1.25);
+    lastTX = e.clientX; lastTY = e.clientY;
+  });
+  const endCamTouch = e => { if (!e || e.pointerId === camPointer) camPointer = null; };
+  renderer.domElement.addEventListener('pointerup', endCamTouch);
+  renderer.domElement.addEventListener('pointercancel', endCamTouch);
+}
+
+
 /* ============================================================
    SPAWN DIRECTOR
 ============================================================ */
@@ -2939,11 +3091,13 @@ function tick(now) {
     if (keys.KeyS || keys.ArrowDown) mz += 1;
     if (keys.KeyA || keys.ArrowLeft) mx -= 1;
     if (keys.KeyD || keys.ArrowRight) mx += 1;
+    mx += touchMove.x;
+    mz += touchMove.z;
     const moving = !!(mx || mz);
     P.movingNow = moving;
 
     // sprint: hold SHIFT for a burst of speed, gated by stamina
-    const wantSprint = (keys.ShiftLeft || keys.ShiftRight) && moving;
+    const wantSprint = (keys.ShiftLeft || keys.ShiftRight || touchMove.sprint) && moving;
     P.sprinting = wantSprint && !P.winded && P.stamina > 0;
     if (P.sprinting) {
       P.stamina -= 30 * dt;
@@ -2987,7 +3141,7 @@ function tick(now) {
       if (gh < P.pos.y - 0.35) { P.onGround = false; P.vy = 0; } // walked off a ledge
       else P.pos.y = gh;
     }
-    if (keys.Space && P.onGround) { P.vy = 9.5; P.onGround = false; Sfx.jump(); }
+    if ((keys.Space || touchMove.jump) && P.onGround) { P.vy = 9.5; P.onGround = false; touchMove.jump = false; setBtnDown(document.getElementById('touchJump'), false); Sfx.jump(); }
     if (!P.onGround) {
       P.vy -= 26 * dt;
       P.pos.y += P.vy * dt;
