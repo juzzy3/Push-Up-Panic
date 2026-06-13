@@ -745,7 +745,7 @@ scene.add(motes);
 const CHARACTERS = [
   { id:'bonky', emoji:'💪', name:'PUSHY',       desc:'The classic. Balanced stats.<br>Starts with Single Push Up.', hp:100, speed:8.0, weapon:'hammer',
     shirt:0xb84040, pants:0x1a1a1a, hair:0x5a3413, band:0x5a3413, build:1.0 },
-  { id:'zippy', emoji:'🏊', name:'DOUBLE PUSH', desc:'+25% move speed, fragile.<br>Double Push Ups + throws a Frisbee.', hp:75,  speed:10.0, weapon:'boomerang',
+  { id:'zippy', emoji:'🤸', name:'DOUBLE PUSH', desc:'+25% move speed, fragile.<br>Double Push Ups + throws a Frisbee.', hp:75,  speed:10.0, weapon:'boomerang',
     shirt:0xf0f0f0, pants:0x2c3e66, hair:0x5a3413, band:0x5a3413, build:0.9 },
   { id:'chonk', emoji:'🤹', name:'PUSH BALLS',  desc:'+60 max HP, a bit slow.<br>Starts with Push Balls.',         hp:160, speed:7.0, weapon:'orbs',
     shirt:0x8a93a8, pants:0x3a3f52, hair:0x2a2a33, band:0x7dff6a, build:1.18 },
@@ -780,9 +780,9 @@ function makePlayerMesh(ch) {
   head.add(skull);
   // hair — anime-style: flat angular pieces hugging skull, no puffy blobs
   const hMat = mat(ch.hair);
-  // crown cap — flat slab covering top of head
-  const hCrown = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.13, 0.70), hMat);
-  hCrown.position.set(0, 0.44, -0.04);
+  // crown cap — extends well back to meet side panels
+  const hCrown = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.14, 0.82), hMat);
+  hCrown.position.set(0, 0.44, -0.10);
   head.add(hCrown);
   // central quiff — tall narrow spike swept slightly forward
   const hQuiff = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.38, 0.14), hMat);
@@ -792,17 +792,17 @@ function makePlayerMesh(ch) {
   const hBang = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.10, 0.10), hMat);
   hBang.position.set(0, 0.32, 0.35); hBang.rotation.x = 0.15;
   head.add(hBang);
-  // left side panel — thin flat slab along left skull
-  const hSL = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.46, 0.52), hMat);
-  hSL.position.set(-0.40, 0.10, -0.06);
+  // left side panel — tall and deep, hugs skull from temple to nape
+  const hSL = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.55, 0.72), hMat);
+  hSL.position.set(-0.40, 0.05, -0.12);
   head.add(hSL);
   // right side panel
-  const hSR = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.46, 0.52), hMat);
-  hSR.position.set(0.40, 0.10, -0.06);
+  const hSR = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.55, 0.72), hMat);
+  hSR.position.set(0.40, 0.05, -0.12);
   head.add(hSR);
-  // back panel — covers nape fully
-  const hBack = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.52, 0.10), hMat);
-  hBack.position.set(0, 0.06, -0.42);
+  // back panel — wide and tall to seal the entire rear
+  const hBack = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.70, 0.12), hMat);
+  hBack.position.set(0, -0.02, -0.42);
   head.add(hBack);
   // eyes — white + warm brown iris + dark pupil
   const eyeMat  = new THREE.MeshBasicMaterial({ color: 0xffffff });
